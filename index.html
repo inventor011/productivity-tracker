@@ -16,8 +16,16 @@
     <h2 class="auth-title" id="auth-title">Welcome back</h2>
     <p class="auth-sub" id="auth-sub">Sign in to access your tracker</p>
     <div class="auth-error" id="auth-error" style="display:none"></div>
+    <input type="text" id="auth-name" class="auth-input" placeholder="Your full name" autocomplete="name" style="display:none"/>
+    <div id="auth-username-row" class="auth-username-row" style="display:none">
+      <input type="text" id="auth-username" class="auth-input" placeholder="Choose a username" autocomplete="off"/>
+      <p class="auth-hint">That name is already taken — pick a username.</p>
+    </div>
     <input type="email" id="auth-email" class="auth-input" placeholder="Email address" autocomplete="email"/>
-    <input type="password" id="auth-password" class="auth-input" placeholder="Password" autocomplete="current-password"/>
+    <div class="auth-password-wrap">
+      <input type="password" id="auth-password" class="auth-input" placeholder="Password" autocomplete="current-password"/>
+      <button type="button" id="auth-eye" class="auth-eye" tabindex="-1">Show</button>
+    </div>
     <button id="auth-submit" class="auth-submit">Sign In</button>
     <p id="auth-switch-row" class="auth-switch-row">
       <span id="auth-switch-label" class="auth-switch-label">Don't have an account? </span><span id="auth-switch-link" class="auth-switch-link">Sign up</span>

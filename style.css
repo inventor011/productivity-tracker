@@ -535,6 +535,13 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .auth-input{display:block;width:100%;background:#151515;border:1px solid #2a2a2a;color:#e8e0d0;font-family:'DM Mono',monospace;font-size:13px;padding:14px 16px;outline:none;transition:border-color .2s;margin-bottom:12px}
 .auth-input:focus{border-color:#c8ff00}
 .auth-input::placeholder{color:#444}
+.auth-password-wrap{position:relative;margin-bottom:12px}
+.auth-password-wrap .auth-input{margin-bottom:0;padding-right:60px}
+.auth-eye{position:absolute;right:1px;top:1px;bottom:1px;width:56px;background:transparent;border:none;color:#555;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;cursor:pointer;transition:color .2s}
+.auth-eye:hover{color:#c8ff00}
+.auth-username-row{margin-bottom:12px}
+.auth-username-row .auth-input{margin-bottom:6px}
+.auth-hint{font-size:11px;color:#c8ff00;letter-spacing:.03em;line-height:1.5;opacity:.8}
 .auth-submit{display:block;width:100%;background:#c8ff00;border:none;color:#080808;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:14px;cursor:pointer;transition:background .2s,transform .1s;margin-top:8px}
 .auth-submit:hover:not(:disabled){background:#d9ff26;transform:translateY(-1px)}
 .auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
