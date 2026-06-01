@@ -48,7 +48,7 @@
 
   // --- Progress ---
   async function loadProgress() {
-    const { data } = await sb.from('progress_data').select('*').eq('user_id', _uid).single();
+    const { data } = await sb.from('progress_data').select('*').eq('user_id', _uid).maybeSingle();
     if (!data) return null;
     return { rows: data.rows, chartTitle: data.chart_title, passingPercent: data.passing_percent };
   }
@@ -64,7 +64,7 @@
 
   // --- Week Tracker ---
   async function loadWeek(weekKey) {
-    const { data } = await sb.from('week_tracker').select('*').eq('user_id', _uid).eq('week_key', weekKey).single();
+    const { data } = await sb.from('week_tracker').select('*').eq('user_id', _uid).eq('week_key', weekKey).maybeSingle();
     if (!data) return { manualRating: null, days: {} };
     return { manualRating: data.manual_rating, days: data.days || {} };
   }
@@ -84,7 +84,7 @@
 
   // --- Ranker ---
   async function loadRanker() {
-    const { data } = await sb.from('ranker_data').select('*').eq('user_id', _uid).single();
+    const { data } = await sb.from('ranker_data').select('*').eq('user_id', _uid).maybeSingle();
     if (!data) return { questions: [], apiKey: '', lastRun: null };
     return { questions: data.questions || [], apiKey: data.api_key_encrypted || '', lastRun: data.last_run };
   }
@@ -100,7 +100,7 @@
 
   // --- Streaks ---
   async function loadStreaks() {
-    const { data } = await sb.from('streak_data').select('*').eq('user_id', _uid).single();
+    const { data } = await sb.from('streak_data').select('*').eq('user_id', _uid).maybeSingle();
     if (!data) return [];
     return data.streaks || [];
   }
@@ -114,7 +114,7 @@
 
   // --- Logbook ---
   async function loadLogbook() {
-    const { data } = await sb.from('logbook_data').select('*').eq('user_id', _uid).single();
+    const { data } = await sb.from('logbook_data').select('*').eq('user_id', _uid).maybeSingle();
     if (!data) return { projects: [], log: [], activeId: null };
     return { projects: data.projects || [], log: data.log || [], activeId: data.active_id };
   }
@@ -130,7 +130,7 @@
 
   // --- Prefs ---
   async function loadPrefs() {
-    const { data } = await sb.from('user_prefs').select('*').eq('user_id', _uid).single();
+    const { data } = await sb.from('user_prefs').select('*').eq('user_id', _uid).maybeSingle();
     return data || { active_tab: 'todo', tracker_theme: 'light' };
   }
   async function savePrefs(obj) {
