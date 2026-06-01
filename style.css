@@ -545,6 +545,8 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .auth-submit{display:block;width:100%;background:#c8ff00;border:none;color:#080808;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:14px;cursor:pointer;transition:background .2s,transform .1s;margin-top:8px}
 .auth-submit:hover:not(:disabled){background:#d9ff26;transform:translateY(-1px)}
 .auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.auth-code-input{text-align:center;font-size:24px!important;letter-spacing:8px;font-weight:700}
+.auth-resend-row{margin-top:14px;text-align:center;font-size:12px;color:#555}
 .auth-switch-row{margin-top:20px;text-align:center;font-size:12px;color:#555}
 .auth-switch-link{color:#c8ff00;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 

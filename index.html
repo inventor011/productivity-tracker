@@ -27,6 +27,11 @@
       <button type="button" id="auth-eye" class="auth-eye" tabindex="-1">Show</button>
     </div>
     <button id="auth-submit" class="auth-submit">Sign In</button>
+    <div id="auth-verify-section" style="display:none">
+      <input type="text" id="auth-code" class="auth-input auth-code-input" placeholder="000000" maxlength="6" autocomplete="one-time-code" inputmode="numeric"/>
+      <button id="auth-verify-btn" class="auth-submit">Verify &amp; Sign In</button>
+      <p class="auth-resend-row"><span class="auth-switch-label">Didn't receive it? </span><span id="auth-resend-link" class="auth-switch-link">Resend code</span></p>
+    </div>
     <p id="auth-switch-row" class="auth-switch-row">
       <span id="auth-switch-label" class="auth-switch-label">Don't have an account? </span><span id="auth-switch-link" class="auth-switch-link">Sign up</span>
     </p>
