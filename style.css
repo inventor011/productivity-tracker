@@ -537,8 +537,8 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .auth-input::placeholder{color:#444}
 .auth-password-wrap{position:relative;margin-bottom:12px}
 .auth-password-wrap .auth-input{margin-bottom:0;padding-right:60px}
-.auth-eye{position:absolute;right:1px;top:1px;bottom:1px;width:56px;background:transparent;border:none;color:#555;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;cursor:pointer;transition:color .2s}
-.auth-eye:hover{color:#c8ff00}
+.auth-eye{position:absolute;right:1px;top:1px;bottom:1px;width:56px;background:#1a1a1a;border:none;border-left:1px solid #2a2a2a;color:#888;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;cursor:pointer;transition:color .2s,background .2s}
+.auth-eye:hover{color:#c8ff00;background:#222}
 .auth-username-row{margin-bottom:12px}
 .auth-username-row .auth-input{margin-bottom:6px}
 .auth-hint{font-size:11px;color:#c8ff00;letter-spacing:.03em;line-height:1.5;opacity:.8}
