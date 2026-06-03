@@ -5,58 +5,54 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   window._supabase = sb;
 
-  var mode = 'signin';
+  var mode = 'signin'; // 'signin' | 'signup' | 'verify'
+  var pendingEmail = '';
 
-  var overlay   = document.getElementById('auth-overlay');
-  var appNav    = document.getElementById('app-nav');
-  var appWrap   = document.getElementById('app-wrapper');
-  var titleEl   = document.getElementById('auth-title');
-  var subEl     = document.getElementById('auth-sub');
-  var errorEl   = document.getElementById('auth-error');
-  var nameIn    = document.getElementById('auth-name');
-  var emailIn   = document.getElementById('auth-email');
-  var passIn    = document.getElementById('auth-password');
-  var passWrap  = document.querySelector('.auth-password-wrap');
-  var eyeBtn    = document.getElementById('auth-eye');
-  var submitBtn = document.getElementById('auth-submit');
-  var switchRow = document.getElementById('auth-switch-row');
-  var navUser   = document.getElementById('nav-user');
-  var navEmail  = document.getElementById('nav-email');
+  var overlay       = document.getElementById('auth-overlay');
+  var appNav        = document.getElementById('app-nav');
+  var appWrap       = document.getElementById('app-wrapper');
+  var titleEl       = document.getElementById('auth-title');
+  var subEl         = document.getElementById('auth-sub');
+  var errorEl       = document.getElementById('auth-error');
+  var nameIn        = document.getElementById('auth-name');
+  var emailIn       = document.getElementById('auth-email');
+  var passIn        = document.getElementById('auth-password');
+  var passWrap      = document.querySelector('.auth-password-wrap');
+  var eyeBtn        = document.getElementById('auth-eye');
+  var submitBtn     = document.getElementById('auth-submit');
   var verifySection = document.getElementById('auth-verify-section');
-
-  // Hide verify section entirely — not used in this flow
-  if (verifySection) verifySection.style.display = 'none';
+  var codeIn        = document.getElementById('auth-code');
+  var verifyBtn     = document.getElementById('auth-verify-btn');
+  var resendLink    = document.getElementById('auth-resend-link');
+  var switchRow     = document.getElementById('auth-switch-row');
+  var navUser       = document.getElementById('nav-user');
+  var navEmail      = document.getElementById('nav-email');
 
   // --- Password toggle ---
   eyeBtn.addEventListener('click', function () {
-    if (passIn.type === 'text') {
-      passIn.type = 'password';
-      eyeBtn.textContent = 'Show';
-    } else {
-      passIn.type = 'text';
-      eyeBtn.textContent = 'Hide';
-    }
+    if (passIn.type === 'text') { passIn.type = 'password'; eyeBtn.textContent = 'Show'; }
+    else { passIn.type = 'text'; eyeBtn.textContent = 'Hide'; }
   });
 
   // --- Helpers ---
-  function nameToUsername(name) {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
-  }
+  function nameToUsername(n) { return n.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); }
 
   function setError(msg) {
     errorEl.textContent = msg;
     errorEl.style.display = msg ? 'block' : 'none';
   }
 
-  function resetBtn() {
-    submitBtn.disabled = false;
-    submitBtn.textContent = mode === 'signup' ? 'Create Account' : 'Sign In';
-  }
-
   function setMode(m) {
     mode = m;
     setError('');
-    nameIn.style.display = m === 'signup' ? '' : 'none';
+    submitBtn.disabled = false;
+
+    nameIn.style.display        = m === 'signup' ? '' : 'none';
+    emailIn.style.display       = m === 'verify' ? 'none' : '';
+    passWrap.style.display      = m === 'verify' ? 'none' : '';
+    submitBtn.style.display     = m === 'verify' ? 'none' : '';
+    verifySection.style.display = m === 'verify' ? '' : 'none';
+    switchRow.style.display     = m === 'verify' ? 'none' : '';
 
     if (m === 'signup') {
       titleEl.textContent = 'Create account';
@@ -64,23 +60,26 @@
       submitBtn.textContent = 'Create Account';
       document.getElementById('auth-switch-link').textContent = 'Sign in instead';
       document.getElementById('auth-switch-label').textContent = 'Already have an account? ';
-    } else {
+    } else if (m === 'signin') {
       titleEl.textContent = 'Welcome back';
       subEl.textContent = 'Sign in to access your tracker';
       submitBtn.textContent = 'Sign In';
       document.getElementById('auth-switch-link').textContent = 'Sign up';
       document.getElementById('auth-switch-label').textContent = "Don't have an account? ";
+    } else if (m === 'verify') {
+      titleEl.textContent = 'Verify your email';
+      subEl.textContent = 'Enter the 6-digit code sent to ' + pendingEmail;
+      if (codeIn) { codeIn.value = ''; setTimeout(function () { codeIn.focus(); }, 100); }
+      if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify & Sign In'; }
     }
   }
 
-  // --- Show app / show auth ---
+  // --- Show app / auth ---
   function showApp(user) {
     overlay.style.display = 'none';
     appNav.style.display = 'flex';
     appWrap.style.display = 'block';
     if (navUser) navUser.style.display = 'flex';
-
-    // Load display name
     sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle().then(function (res) {
       var label = (res.data && res.data.display_name) ? res.data.display_name : user.email.split('@')[0];
       if (navEmail) navEmail.textContent = label;
@@ -94,36 +93,30 @@
     if (navUser) navUser.style.display = 'none';
   }
 
-  // --- Ensure profile exists ---
+  // --- Profile creation ---
   function ensureProfile(user) {
     var meta = user.user_metadata || {};
     var name = meta.display_name || user.email.split('@')[0];
     var username = meta.username || nameToUsername(name);
 
     sb.from('profiles').select('id').eq('id', user.id).maybeSingle().then(function (res) {
-      if (res.data) return; // Already exists
-
-      // Check if username is taken, add random suffix if so
+      if (res.data) return;
       sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
         if (check.data) username = username + Math.floor(Math.random() * 9000 + 1000);
-
-        sb.from('profiles').insert({
-          id: user.id,
-          display_name: name,
-          username: username
-        }).then(function () {});
+        sb.from('profiles').insert({ id: user.id, display_name: name, username: username }).then(function () {});
       });
     });
   }
 
-  // --- Submit handler ---
+  // --- Signup / Signin ---
   async function handleSubmit() {
     setError('');
-    var email = emailIn.value.trim();
-    var password = passIn.value;
 
     if (mode === 'signup') {
       var name = nameIn.value.trim();
+      var email = emailIn.value.trim();
+      var password = passIn.value;
+
       if (!name) { setError('Please enter your name.'); return; }
       if (!email) { setError('Please enter your email.'); return; }
       if (!password || password.length < 6) { setError('Password must be at least 6 characters.'); return; }
@@ -141,37 +134,34 @@
           }
         });
 
-        if (result.error) {
-          setError(result.error.message);
-          resetBtn();
-          return;
-        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
 
-        // If Supabase returned a user with no identities → email already registered
+        if (result.error) { setError(result.error.message); return; }
+
         if (result.data && result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
           setError('This email is already registered. Try signing in.');
-          resetBtn();
           return;
         }
 
-        // If we got a session → user is logged in (email confirmation is off)
+        // Session exists → email confirmation is OFF → user is logged in
         if (result.data && result.data.session) {
-          // onAuthStateChange will handle showing the app
-          return;
+          return; // onAuthStateChange handles the rest
         }
 
-        // If no session → email confirmation is on, tell user
-        setError('Account created! Check your email to confirm, then sign in here.');
-        setMode('signin');
-        emailIn.value = email;
+        // No session → email confirmation is ON → show verify screen
+        pendingEmail = email;
+        setMode('verify');
 
       } catch (e) {
         setError('Something went wrong: ' + (e.message || 'Please try again.'));
-        resetBtn();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
       }
 
-    } else {
-      // Sign in
+    } else if (mode === 'signin') {
+      var email = emailIn.value.trim();
+      var password = passIn.value;
       if (!email) { setError('Please enter your email.'); return; }
       if (!password) { setError('Please enter your password.'); return; }
 
@@ -180,18 +170,64 @@
 
       try {
         var result = await sb.auth.signInWithPassword({ email: email, password: password });
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
 
         if (result.error) {
+          if (result.error.message && result.error.message.toLowerCase().indexOf('not confirmed') !== -1) {
+            pendingEmail = email;
+            setError('Email not verified yet.');
+            setMode('verify');
+            return;
+          }
           setError(result.error.message);
-          resetBtn();
           return;
         }
-        // onAuthStateChange will handle showing the app
-
       } catch (e) {
         setError('Something went wrong: ' + (e.message || 'Please try again.'));
-        resetBtn();
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
       }
+    }
+  }
+
+  // --- OTP Verify ---
+  async function handleVerify() {
+    var code = codeIn.value.trim();
+    if (!code || code.length < 6) { setError('Please enter the 6-digit code.'); return; }
+
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'Verifying…';
+    setError('');
+
+    try {
+      var result = await sb.auth.verifyOtp({
+        email: pendingEmail,
+        token: code,
+        type: 'signup'
+      });
+
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'Verify & Sign In';
+
+      if (result.error) { setError(result.error.message); return; }
+      // Success — onAuthStateChange fires automatically
+    } catch (e) {
+      setError('Verification failed: ' + (e.message || 'Check the code and try again.'));
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'Verify & Sign In';
+    }
+  }
+
+  // --- Resend ---
+  async function handleResend() {
+    setError('');
+    try {
+      var result = await sb.auth.resend({ type: 'signup', email: pendingEmail });
+      if (result.error) { setError(result.error.message); return; }
+      subEl.textContent = 'New code sent to ' + pendingEmail;
+    } catch (e) {
+      setError('Could not resend. Try again in a moment.');
     }
   }
 
@@ -199,33 +235,24 @@
   document.getElementById('auth-switch-link').addEventListener('click', function () {
     setMode(mode === 'signin' ? 'signup' : 'signin');
   });
-
   submitBtn.addEventListener('click', handleSubmit);
+  if (verifyBtn) verifyBtn.addEventListener('click', handleVerify);
+  if (resendLink) resendLink.addEventListener('click', handleResend);
+  if (codeIn) codeIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') handleVerify(); });
   passIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') handleSubmit(); });
   emailIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') passIn.focus(); });
   nameIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') emailIn.focus(); });
+  document.getElementById('nav-logout').addEventListener('click', function () { sb.auth.signOut(); });
 
-  document.getElementById('nav-logout').addEventListener('click', function () {
-    sb.auth.signOut();
-  });
-
-  // --- Auth state listener ---
+  // --- Auth state ---
   sb.auth.onAuthStateChange(function (_event, session) {
-    if (session) {
-      ensureProfile(session.user);
-      showApp(session.user);
-    } else {
-      showAuth();
-    }
+    if (session) { ensureProfile(session.user); showApp(session.user); }
+    else { showAuth(); }
   });
 
   sb.auth.getSession().then(function (response) {
     var session = response.data.session;
-    if (session) {
-      ensureProfile(session.user);
-      showApp(session.user);
-    } else {
-      showAuth();
-    }
+    if (session) { ensureProfile(session.user); showApp(session.user); }
+    else { showAuth(); }
   });
 })();
