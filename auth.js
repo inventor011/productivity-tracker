@@ -93,9 +93,14 @@
       navAvatar.style.display = '';
     }
 
+    // Show name immediately from Google metadata, then refine from profile
+    var quickName = getDisplayName(user);
+    if (navEmail) navEmail.textContent = quickName;
+
     sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle().then(function (res) {
-      var label = (res.data && res.data.display_name) ? res.data.display_name : user.email.split('@')[0];
-      if (navEmail) navEmail.textContent = label;
+      if (res.data && res.data.display_name) {
+        if (navEmail) navEmail.textContent = res.data.display_name;
+      }
     });
   }
 
@@ -107,13 +112,26 @@
   }
 
   // --- Profile creation ---
-  function ensureProfile(user) {
+  function getDisplayName(user) {
     var meta = user.user_metadata || {};
-    var name = meta.display_name || meta.full_name || meta.name || user.email.split('@')[0];
+    // Google sends full_name/name; email signup sends display_name
+    return meta.full_name || meta.name || meta.display_name || user.email.split('@')[0];
+  }
+
+  function ensureProfile(user) {
+    var name = getDisplayName(user);
+    var meta = user.user_metadata || {};
     var username = meta.username || nameToUsername(name);
 
-    sb.from('profiles').select('id').eq('id', user.id).maybeSingle().then(function (res) {
-      if (res.data) return;
+    sb.from('profiles').select('id, display_name').eq('id', user.id).maybeSingle().then(function (res) {
+      if (res.data) {
+        // Update name if it was stored as the email prefix but Google has the real name
+        var stored = res.data.display_name;
+        if (stored && stored === user.email.split('@')[0] && name !== stored) {
+          sb.from('profiles').update({ display_name: name }).eq('id', user.id).then(function () {});
+        }
+        return;
+      }
       sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
         if (check.data) username = username + Math.floor(Math.random() * 9000 + 1000);
         sb.from('profiles').insert({ id: user.id, display_name: name, username: username }).then(function () {});
