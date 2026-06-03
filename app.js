@@ -143,7 +143,7 @@ async function initProgress() {
       const c = WEEK_COLORS[i % WEEK_COLORS.length];
       const div = document.createElement('div');
       div.className = 'data-row';
-      div.innerHTML = `<input type="text" value="${escHtml(r.week)}" placeholder="Week ${i + 1}" style="border-left:3px solid ${c}" oninput="progUpdateWeek(${i},this.value)"/><input type="number" value="${r.pct}" min="0" max="100" placeholder="0–100" oninput="progUpdatePct(${i},this.value)"/><button class="del-btn" onclick="progDeleteRow(${i})" title="Remove">✕</button>`;
+      div.innerHTML = `<input type="text" value="${escHtml(r.week)}" placeholder="Week ${i + 1}" style="border-left:3px solid ${c}" oninput="progUpdateWeek(${i},this.value)" onkeydown="if(event.key==='Enter'){this.nextElementSibling.focus()}"/><input type="number" value="${r.pct}" min="0" max="100" placeholder="0–100" oninput="progUpdatePct(${i},this.value)" onkeydown="if(event.key==='Enter'){progAddRow()}"/><button class="del-btn" onclick="progDeleteRow(${i})" title="Remove">✕</button>`;
       list.appendChild(div);
     });
     updateChart();
@@ -378,7 +378,8 @@ async function initTracker() {
       });
     }
     document.getElementById('addTaskBtn').addEventListener('click', addTask);
-    document.getElementById('taskNameIn').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+    document.getElementById('taskNameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { var r = document.getElementById('taskRatingIn'); if (!r.value) { r.focus(); } else { addTask(); } } });
+    document.getElementById('taskRatingIn').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
     async function addTask() {
       const nameEl = document.getElementById('taskNameIn'), ratingEl = document.getElementById('taskRatingIn');
       const name = nameEl.value.trim(), rating = parseFloat(ratingEl.value);
