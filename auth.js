@@ -5,31 +5,27 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   window._supabase = sb;
 
-  var mode = 'signin'; // 'signin' | 'signup' | 'verify'
-  var pendingEmail = '';
-  var _signingUp = false; // flag to ignore auth changes during signup flow
+  var mode = 'signin';
 
-  var overlay       = document.getElementById('auth-overlay');
-  var appNav        = document.getElementById('app-nav');
-  var appWrap       = document.getElementById('app-wrapper');
-  var titleEl       = document.getElementById('auth-title');
-  var subEl         = document.getElementById('auth-sub');
-  var errorEl       = document.getElementById('auth-error');
-  var nameIn        = document.getElementById('auth-name');
-  var emailIn       = document.getElementById('auth-email');
-  var passIn        = document.getElementById('auth-password');
-  var passWrap      = document.querySelector('.auth-password-wrap');
-  var eyeBtn        = document.getElementById('auth-eye');
-  var submitBtn     = document.getElementById('auth-submit');
-  var verifySection = document.getElementById('auth-verify-section');
-  var codeIn        = document.getElementById('auth-code');
-  var verifyBtn     = document.getElementById('auth-verify-btn');
-  var resendLink    = document.getElementById('auth-resend-link');
-  var switchRow     = document.getElementById('auth-switch-row');
-  var navUser       = document.getElementById('nav-user');
-  var navEmail      = document.getElementById('nav-email');
+  var overlay   = document.getElementById('auth-overlay');
+  var appNav    = document.getElementById('app-nav');
+  var appWrap   = document.getElementById('app-wrapper');
+  var titleEl   = document.getElementById('auth-title');
+  var subEl     = document.getElementById('auth-sub');
+  var errorEl   = document.getElementById('auth-error');
+  var nameIn    = document.getElementById('auth-name');
+  var emailIn   = document.getElementById('auth-email');
+  var passIn    = document.getElementById('auth-password');
+  var passWrap  = document.querySelector('.auth-password-wrap');
+  var eyeBtn    = document.getElementById('auth-eye');
+  var submitBtn = document.getElementById('auth-submit');
+  var switchRow = document.getElementById('auth-switch-row');
+  var navUser   = document.getElementById('nav-user');
+  var navEmail  = document.getElementById('nav-email');
 
-  // Hide unused elements
+  // Hide unused elements from previous flows
+  var vs = document.getElementById('auth-verify-section');
+  if (vs) vs.style.display = 'none';
   var ur = document.getElementById('auth-username-row');
   if (ur) ur.style.display = 'none';
 
@@ -37,6 +33,20 @@
   eyeBtn.addEventListener('click', function () {
     if (passIn.type === 'text') { passIn.type = 'password'; eyeBtn.textContent = 'Show'; }
     else { passIn.type = 'text'; eyeBtn.textContent = 'Hide'; }
+  });
+
+  // --- Google Sign-In ---
+  document.getElementById('auth-google-btn').addEventListener('click', async function () {
+    setError('');
+    try {
+      var result = await sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: 'https://productivity101.vercel.app' }
+      });
+      if (result.error) setError(result.error.message);
+    } catch (e) {
+      setError('Google sign-in failed. Please try again.');
+    }
   });
 
   // --- Helpers ---
@@ -51,13 +61,7 @@
     mode = m;
     setError('');
     submitBtn.disabled = false;
-
-    nameIn.style.display        = m === 'signup' ? '' : 'none';
-    emailIn.style.display       = m === 'verify' ? 'none' : '';
-    passWrap.style.display      = m === 'verify' ? 'none' : '';
-    submitBtn.style.display     = m === 'verify' ? 'none' : '';
-    verifySection.style.display = m === 'verify' ? '' : 'none';
-    switchRow.style.display     = m === 'verify' ? 'none' : '';
+    nameIn.style.display = m === 'signup' ? '' : 'none';
 
     if (m === 'signup') {
       titleEl.textContent = 'Create account';
@@ -65,17 +69,12 @@
       submitBtn.textContent = 'Create Account';
       document.getElementById('auth-switch-link').textContent = 'Sign in instead';
       document.getElementById('auth-switch-label').textContent = 'Already have an account? ';
-    } else if (m === 'signin') {
+    } else {
       titleEl.textContent = 'Welcome back';
       subEl.textContent = 'Sign in to access your tracker';
       submitBtn.textContent = 'Sign In';
       document.getElementById('auth-switch-link').textContent = 'Sign up';
       document.getElementById('auth-switch-label').textContent = "Don't have an account? ";
-    } else if (m === 'verify') {
-      titleEl.textContent = 'Verify your email';
-      subEl.textContent = 'Enter the 6-digit code sent to ' + pendingEmail;
-      if (codeIn) { codeIn.value = ''; setTimeout(function () { codeIn.focus(); }, 100); }
-      if (verifyBtn) { verifyBtn.disabled = false; verifyBtn.textContent = 'Verify & Sign In'; }
     }
   }
 
@@ -101,7 +100,7 @@
   // --- Profile creation ---
   function ensureProfile(user) {
     var meta = user.user_metadata || {};
-    var name = meta.display_name || user.email.split('@')[0];
+    var name = meta.display_name || meta.full_name || meta.name || user.email.split('@')[0];
     var username = meta.username || nameToUsername(name);
 
     sb.from('profiles').select('id').eq('id', user.id).maybeSingle().then(function (res) {
@@ -113,7 +112,7 @@
     });
   }
 
-  // --- Signup ---
+  // --- Email/Password Submit ---
   async function handleSubmit() {
     setError('');
 
@@ -130,63 +129,35 @@
       submitBtn.textContent = 'Creating account…';
 
       try {
-        _signingUp = true; // prevent auth state listener from showing app
-
-        // Step 1: Create the account
-        var signUpResult = await sb.auth.signUp({
+        var result = await sb.auth.signUp({
           email: email,
           password: password,
           options: { data: { display_name: name, username: nameToUsername(name) } }
         });
 
-        if (signUpResult.error) {
-          _signingUp = false;
-          setError(signUpResult.error.message);
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create Account';
-          return;
-        }
-
-        // Check if user already exists
-        if (signUpResult.data && signUpResult.data.user &&
-            signUpResult.data.user.identities && signUpResult.data.user.identities.length === 0) {
-          _signingUp = false;
-          setError('This email is already registered. Try signing in.');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create Account';
-          return;
-        }
-
-        // Step 2: Sign out silently (don't let them in without verification)
-        await sb.auth.signOut();
-
-        // Step 3: Send the real 6-digit OTP via Magic Link flow
-        var otpResult = await sb.auth.signInWithOtp({
-          email: email,
-          options: { shouldCreateUser: false }
-        });
-
-        _signingUp = false;
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account';
 
-        if (otpResult.error) {
-          setError(otpResult.error.message);
+        if (result.error) { setError(result.error.message); return; }
+
+        if (result.data && result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
+          setError('This email is already registered. Try signing in.');
           return;
         }
 
-        // Step 4: Show the code entry screen
-        pendingEmail = email;
-        setMode('verify');
+        if (result.data && result.data.session) {
+          return; // onAuthStateChange handles the rest
+        }
+
+        setError('Account created! But email confirmation is enabled. Please disable it in Supabase or use Google Sign-In.');
 
       } catch (e) {
-        _signingUp = false;
         setError('Something went wrong: ' + (e.message || 'Please try again.'));
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Account';
       }
 
-    } else if (mode === 'signin') {
+    } else {
       var email = emailIn.value.trim();
       var password = passIn.value;
       if (!email) { setError('Please enter your email.'); return; }
@@ -200,7 +171,6 @@
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In';
         if (result.error) { setError(result.error.message); return; }
-        // onAuthStateChange handles the rest
       } catch (e) {
         setError('Something went wrong: ' + (e.message || 'Please try again.'));
         submitBtn.disabled = false;
@@ -209,57 +179,11 @@
     }
   }
 
-  // --- Verify OTP code ---
-  async function handleVerify() {
-    var code = codeIn.value.trim();
-    if (!code || code.length < 6) { setError('Please enter the 6-digit code.'); return; }
-
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = 'Verifying…';
-    setError('');
-
-    try {
-      var result = await sb.auth.verifyOtp({
-        email: pendingEmail,
-        token: code,
-        type: 'email'  // This is the correct type for signInWithOtp codes
-      });
-
-      verifyBtn.disabled = false;
-      verifyBtn.textContent = 'Verify & Sign In';
-
-      if (result.error) { setError(result.error.message); return; }
-      // Success — onAuthStateChange fires and shows the app
-    } catch (e) {
-      setError('Verification failed: ' + (e.message || 'Check the code and try again.'));
-      verifyBtn.disabled = false;
-      verifyBtn.textContent = 'Verify & Sign In';
-    }
-  }
-
-  // --- Resend code ---
-  async function handleResend() {
-    setError('');
-    try {
-      var result = await sb.auth.signInWithOtp({
-        email: pendingEmail,
-        options: { shouldCreateUser: false }
-      });
-      if (result.error) { setError(result.error.message); return; }
-      subEl.textContent = 'New code sent to ' + pendingEmail;
-    } catch (e) {
-      setError('Could not resend. Try again in a moment.');
-    }
-  }
-
   // --- Events ---
   document.getElementById('auth-switch-link').addEventListener('click', function () {
     setMode(mode === 'signin' ? 'signup' : 'signin');
   });
   submitBtn.addEventListener('click', handleSubmit);
-  if (verifyBtn) verifyBtn.addEventListener('click', handleVerify);
-  if (resendLink) resendLink.addEventListener('click', handleResend);
-  if (codeIn) codeIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') handleVerify(); });
   passIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') handleSubmit(); });
   emailIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') passIn.focus(); });
   nameIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') emailIn.focus(); });
@@ -267,7 +191,6 @@
 
   // --- Auth state ---
   sb.auth.onAuthStateChange(function (_event, session) {
-    if (_signingUp) return; // Ignore during signup flow
     if (session) { ensureProfile(session.user); showApp(session.user); }
     else { showAuth(); }
   });

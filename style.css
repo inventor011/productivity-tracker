@@ -545,6 +545,11 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .auth-submit{display:block;width:100%;background:#c8ff00;border:none;color:#080808;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:14px;cursor:pointer;transition:background .2s,transform .1s;margin-top:8px}
 .auth-submit:hover:not(:disabled){background:#d9ff26;transform:translateY(-1px)}
 .auth-submit:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.auth-google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;background:#fff;border:1px solid #333;border-radius:4px;color:#222;font-family:'DM Mono',monospace;font-size:13px;font-weight:500;letter-spacing:.02em;cursor:pointer;transition:background .2s,border-color .2s;margin-bottom:0}
+.auth-google-btn:hover{background:#f5f5f5;border-color:#555}
+.auth-google-btn svg{flex-shrink:0}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#444;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#2a2a2a}
 .auth-code-input{text-align:center;font-size:24px!important;letter-spacing:8px;font-weight:700}
 .auth-resend-row{margin-top:14px;text-align:center;font-size:12px;color:#555}
 .auth-switch-row{margin-top:20px;text-align:center;font-size:12px;color:#555}
