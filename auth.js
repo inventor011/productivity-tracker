@@ -84,6 +84,15 @@
     appNav.style.display = 'flex';
     appWrap.style.display = 'block';
     if (navUser) navUser.style.display = 'flex';
+
+    var meta = user.user_metadata || {};
+    var avatarUrl = meta.avatar_url || meta.picture || '';
+    var navAvatar = document.getElementById('nav-avatar');
+    if (navAvatar && avatarUrl) {
+      navAvatar.src = avatarUrl;
+      navAvatar.style.display = '';
+    }
+
     sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle().then(function (res) {
       var label = (res.data && res.data.display_name) ? res.data.display_name : user.email.split('@')[0];
       if (navEmail) navEmail.textContent = label;
