@@ -284,26 +284,35 @@ async function initTracker() {
     const ys = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
     return Math.ceil((((dt - ys) / 86400000) + 1) / 7);
   }
-  function computeTaskAvg(data) { let s = 0, c = 0; Object.values(data.days).forEach(ts => ts.forEach(t => { s += t.rating; c++; })); return c ? +(s / c).toFixed(2) : null; }
-  function weekScore(data) { if (data.manualRating != null) return +data.manualRating; return computeTaskAvg(data); }
+  function dayAvg(tasks) {
+    if (!tasks || !tasks.length) return 0;
+    return tasks.reduce((s, t) => s + t.rating, 0) / tasks.length;
+  }
+  function weekScore(data) {
+    if (data.manualRating != null) return +data.manualRating;
+    var dates = Object.keys(data.days);
+    if (!dates.length) return null;
+    var sum = 0;
+    Object.values(data.days).forEach(function (tasks) { sum += dayAvg(tasks); });
+    return +sum.toFixed(2);
+  }
   function tier(score) {
     if (score == null) return null;
-    if (score > 5) return { label: 'Overachiever', cls: 'tier-over', color: 'var(--green)' };
-    if (score >= 4) return { label: 'Good', cls: 'tier-good', color: 'var(--blue)' };
-    if (score >= 3) return { label: 'Average', cls: 'tier-avg', color: 'var(--amber)' };
+    if (score > 6.5) return { label: 'Overachiever', cls: 'tier-over', color: 'var(--green)' };
+    if (score >= 5) return { label: 'Good', cls: 'tier-good', color: 'var(--blue)' };
+    if (score >= 4) return { label: 'Average', cls: 'tier-avg', color: 'var(--amber)' };
     return { label: 'Underachiever', cls: 'tier-under', color: 'var(--red)' };
   }
-  function barClass(s) { if (s == null) return 'bar-empty'; if (s > 5) return 'bar-over'; if (s >= 4) return 'bar-good'; if (s >= 3) return 'bar-avg'; return 'bar-under'; }
+  function barClass(s) { if (s == null) return 'bar-empty'; if (s > 6.5) return 'bar-over'; if (s >= 5) return 'bar-good'; if (s >= 4) return 'bar-avg'; return 'bar-under'; }
   function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function countAllTasks(data) { return Object.values(data.days).reduce((s, ts) => s + ts.length, 0); }
-  function tierDesc(score) { if (score == null) return ''; if (score > 7) return 'Beyond the scale!'; if (score > 5) return 'Pushing well above average.'; if (score >= 4) return 'Performing solidly this week.'; if (score >= 3) return 'Meeting the baseline.'; return 'Below baseline.'; }
-  function bestStreak(scores) { let st = 0, b = 0; scores.forEach(s => { if (s >= 3.5) { st++; b = Math.max(b, st); } else st = 0; }); return b; }
+  function tierDesc(score) { if (score == null) return ''; if (score > 6.5) return 'Near-perfect discipline.'; if (score >= 5) return 'Strong performance this week.'; if (score >= 4) return 'Meeting the baseline.'; return 'Below baseline.'; }
+  function bestStreak(scores) { let st = 0, b = 0; scores.forEach(s => { if (s >= 4) { st++; b = Math.max(b, st); } else st = 0; }); return b; }
   function openingLine(ws, prev) {
     const diff = prev != null ? ws - prev : null;
-    if (ws > 7) return 'Extraordinary performance this week.';
-    if (ws > 5) return 'Strong week — overachiever territory' + (diff > 0 ? ', improving from last week.' : '.');
-    if (ws >= 4) return 'Good week overall.' + (diff != null ? (diff >= 0 ? ' Held ground or improved.' : ' Slight dip, but solid.') : '');
-    if (ws >= 3) return 'Average week.' + (diff != null ? (diff > 0 ? ' Better than last week.' : diff < 0 ? ' A step down.' : ' Consistent.') : '');
+    if (ws > 6.5) return 'Extraordinary performance this week.' + (diff > 0 ? ' Improving from last week.' : '');
+    if (ws >= 5) return 'Strong week — good discipline.' + (diff != null ? (diff >= 0 ? ' Held ground or improved.' : ' Slight dip, but solid.') : '');
+    if (ws >= 4) return 'Average week.' + (diff != null ? (diff > 0 ? ' Better than last week.' : diff < 0 ? ' A step down.' : ' Consistent.') : '');
     return 'Challenging week.' + (diff != null && diff > 0 ? ' Still improved on last week.' : '');
   }
   function trendLine(trend) {
@@ -313,7 +322,7 @@ async function initTracker() {
   }
   function tierAdvice(ws, t) {
     if (!t) return '';
-    const a = { 'tier-over': 'Exceeding expectations. Raise your baseline.', 'tier-good': 'Good shape. Target weakest days.', 'tier-avg': 'Average — commit to higher ratings.', 'tier-under': 'Below average. Pinpoint what drags your score.' };
+    const a = { 'tier-over': 'Exceptional discipline. Keep this up.', 'tier-good': 'Strong week. Target your weakest days.', 'tier-avg': 'Decent baseline. Push for consistency.', 'tier-under': 'Below average. Identify what\'s dragging your score.' };
     return a[t.cls] || '';
   }
 
@@ -332,11 +341,9 @@ async function initTracker() {
     document.getElementById('weekPill').textContent = 'Week ' + wn;
     document.getElementById('weekTitle').textContent = isThis ? 'This Week' : currentOffset < 0 ? Math.abs(currentOffset) + ' Week' + (Math.abs(currentOffset) > 1 ? 's' : '') + ' Ago' : currentOffset + ' Week Ahead';
     document.getElementById('weekRange').textContent = fmt(dates[0]) + '  –  ' + fmt(dates[6]);
-    const ws = weekScore(data), avg = computeTaskAvg(data), t = tier(ws);
+    const ws = weekScore(data), t = tier(ws);
     document.getElementById('sc-week').textContent = ws != null ? ws.toFixed(1) : '—';
-    document.getElementById('sc-week-sub').textContent = data.manualRating != null ? '★ Manual override' : (ws != null ? 'From task average' : 'No data yet');
-    document.getElementById('sc-avg').textContent = avg != null ? avg.toFixed(2) : '—';
-    document.getElementById('sc-avg-sub').textContent = avg != null ? countAllTasks(data) + ' task entries' : 'No tasks logged';
+    document.getElementById('sc-week-sub').textContent = data.manualRating != null ? '★ Manual override' : (ws != null ? 'Sum of daily averages' : 'No data yet');
     const tierEl = document.getElementById('sc-tier'), tierSub = document.getElementById('sc-tier-sub');
     if (t) { tierEl.innerHTML = '<span class="tier-badge ' + t.cls + '">' + t.label + '</span>'; tierSub.textContent = tierDesc(ws); }
     else { tierEl.innerHTML = '<span style="color:var(--text3);font-size:.85rem">—</span>'; tierSub.textContent = 'Log tasks to see tier'; }
@@ -352,20 +359,21 @@ async function initTracker() {
     });
     const selDate = dates[selectedDayIdx], selDs = selDate.toISOString().slice(0, 10);
     const dayTasks = data.days[selDs] || [];
-    const dayAvg = dayTasks.length ? (dayTasks.reduce((s, t) => s + t.rating, 0) / dayTasks.length).toFixed(1) : null;
+    const dayAvgVal = dayTasks.length ? (dayTasks.reduce((s, t) => s + t.rating, 0) / dayTasks.length).toFixed(2) : null;
     const panel = document.getElementById('dayPanel');
-    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvg ? '<div class="day-avg-chip">Avg: ' + dayAvg + '</div>' : '') + '</div><div class="add-row"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="7" step="0.1" min="0" title="Rating"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="task-list" id="taskListEl"></div>';
+    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="0.5" step="0.1" min="0" max="1" title="Rating (0–1)"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="task-list" id="taskListEl"></div>';
     const taskListEl = document.getElementById('taskListEl');
     if (!dayTasks.length) { taskListEl.innerHTML = '<div class="empty-day"><div class="emo">📝</div>No tasks for this day yet.</div>'; }
     else {
       dayTasks.forEach((task, ti) => {
         const item = document.createElement('div'); item.className = 'task-item';
-        item.innerHTML = '<div class="task-item-name">' + escHtml(task.name) + '</div><input type="number" class="task-rating-edit" value="' + task.rating + '" step="0.1" min="0" data-ti="' + ti + '"/><button class="del-btn" data-ti="' + ti + '">×</button>';
+        item.innerHTML = '<div class="task-item-name">' + escHtml(task.name) + '</div><input type="number" class="task-rating-edit" value="' + task.rating + '" step="0.1" min="0" max="1" data-ti="' + ti + '"/><button class="del-btn" data-ti="' + ti + '">×</button>';
         taskListEl.appendChild(item);
       });
       taskListEl.querySelectorAll('.task-rating-edit').forEach(inp => {
         inp.addEventListener('change', async () => {
-          const ti = +inp.dataset.ti, val = parseFloat(inp.value); if (isNaN(val)) return;
+          const ti = +inp.dataset.ti; var val = parseFloat(inp.value); if (isNaN(val)) return;
+          val = Math.min(1, Math.max(0, val));
           const d2 = await DB.loadWeek(mondayKey); d2.days[selDs][ti].rating = val; await DB.saveWeek(mondayKey, d2); render();
         });
       });
@@ -382,50 +390,102 @@ async function initTracker() {
     document.getElementById('taskRatingIn').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
     async function addTask() {
       const nameEl = document.getElementById('taskNameIn'), ratingEl = document.getElementById('taskRatingIn');
-      const name = nameEl.value.trim(), rating = parseFloat(ratingEl.value);
+      const name = nameEl.value.trim(); var rating = parseFloat(ratingEl.value);
       if (!name) { nameEl.style.borderColor = 'var(--red)'; setTimeout(() => nameEl.style.borderColor = '', 900); return; }
       if (isNaN(rating)) { ratingEl.style.borderColor = 'var(--red)'; setTimeout(() => ratingEl.style.borderColor = '', 900); return; }
+      rating = Math.min(1, Math.max(0, rating));
       const d2 = await DB.loadWeek(mondayKey); if (!d2.days[selDs]) d2.days[selDs] = [];
       d2.days[selDs].push({ name, rating }); await DB.saveWeek(mondayKey, d2);
       nameEl.value = ''; ratingEl.value = ''; render();
     }
+    renderWeekChart(mondayKey, data, dates);
     await renderChart(mondayKey); renderReport(mondayKey); renderWeeksList(mondayKey);
   }
 
-  async function renderChart(currentKey) {
-    const area = document.getElementById('chartArea');
-    const keys = await DB.allWeekKeys(); if (!keys.includes(currentKey)) keys.unshift(currentKey);
-    const sorted = [...new Set([...keys])].sort(), recent = sorted.slice(-12);
-    if (recent.length < 1) { area.innerHTML = '<div class="no-chart-msg">Log tasks over multiple weeks to see progress chart.</div>'; return; }
-    const MAX_Y = 7, CHART_H = 220;
-    const entries = [];
-    for (const k of recent) {
-      const d = await DB.loadWeek(k), ws = weekScore(d), dates = getWeekDates(k);
-      entries.push({ key: k, score: ws, label: 'W' + getWeekNum(dates[0]) + '\n' + (fmt(dates[0]).split(' ')[1]?.slice(0, 3) || ''), isCurrent: k === currentKey });
+  // --- Progress Over Week (current week daily averages, 0–1 scale) ---
+  function renderWeekChart(mondayKey, data, dates) {
+    var area = document.getElementById('weekChartArea');
+    var MAX_Y = 1;
+    var gridYs = [0, 0.2, 0.4, 0.6, 0.8, 1.0];
+    var points = [];
+    for (var i = 0; i < 7; i++) {
+      var ds = dates[i].toISOString().slice(0, 10);
+      var tasks = data.days[ds] || [];
+      var avg = tasks.length ? tasks.reduce(function (s, t) { return s + t.rating; }, 0) / tasks.length : 0;
+      points.push({ label: DAYS_SHORT[i], value: avg });
     }
-    function yPct(v) { return Math.min(v / MAX_Y, 1.4) * 100; }
-    const zones = [{ cls: 'zone-over', top: 0, bottom: 28.6 }, { cls: 'zone-good', top: 28.6, bottom: 42.8 }, { cls: 'zone-avg', top: 42.8, bottom: 57.1 }, { cls: 'zone-under', top: 57.1, bottom: 100 }];
-    const gridYs = [0, 1, 2, 3, 4, 5, 6, 7];
-    let barsHtml = '';
-    entries.forEach(e => {
-      const score = e.score, bc = barClass(score), heightPct = score != null ? yPct(score) : 2, label = score != null ? score.toFixed(1) : '—';
-      barsHtml += '<div class="chart-bar-wrap"><div class="chart-bar ' + bc + '" style="height:' + heightPct + '%" data-val="' + label + '"></div></div>';
-    });
-    const gridHtml = gridYs.map(v => '<div class="grid-line" style="bottom:' + yPct(v) + '%"></div>').join('');
-    const zoneHtml = zones.map(z => '<div class="zone-band ' + z.cls + '" style="top:' + z.top + '%;height:' + (z.bottom - z.top) + '%"></div>').join('');
-    const xLabelsHtml = entries.map(e => '<div class="x-lbl' + (e.isCurrent ? ' current-week' : '') + '">' + e.label.replace('\n', '<br>') + '</div>').join('');
-    const yLabelsHtml = gridYs.map(v => '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v + '</div>').join('');
-    const n = entries.length; let svgPath = '';
-    if (n > 1) {
-      const pts = entries.map((e, i) => ({ x: (i / (n - 1)) * 100, y: 100 - yPct(e.score ?? 0) }));
-      svgPath = '<svg class="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="' + pts.map(p => p.x.toFixed(2) + ',' + p.y.toFixed(2)).join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="0.8" vector-effect="non-scaling-stroke"/></svg>';
+    function yPct(v) { return Math.min(v / MAX_Y, 1) * 100; }
+    var yLabelsHtml = gridYs.map(function (v) { return '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v.toFixed(1) + '</div>'; }).join('');
+    var gridHtml = gridYs.map(function (v) { return '<div class="grid-line" style="bottom:' + yPct(v) + '%"></div>'; }).join('');
+    var xLabelsHtml = points.map(function (p) { return '<div class="x-lbl">' + p.label + '</div>'; }).join('');
+    var barsHtml = points.map(function (p) {
+      var h = yPct(p.value);
+      var color = p.value >= 0.8 ? 'var(--green)' : p.value >= 0.5 ? 'var(--blue)' : p.value > 0 ? 'var(--amber)' : 'var(--border2)';
+      return '<div class="chart-bar-wrap"><div class="chart-bar" style="height:' + Math.max(h, 2) + '%;background:' + color + '" data-val="' + p.value.toFixed(2) + '"></div></div>';
+    }).join('');
+    var svgPath = '';
+    var pts = points.map(function (p, i) { return { x: (i / 6) * 100, y: 100 - yPct(p.value) }; });
+    svgPath = '<svg class="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="' + pts.map(function (p) { return p.x.toFixed(2) + ',' + p.y.toFixed(2); }).join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="0.8" vector-effect="non-scaling-stroke"/></svg>';
+    area.innerHTML = '<div class="chart-wrap"><div class="y-labels">' + yLabelsHtml + '</div><div class="chart-canvas-row">' + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div>' + svgPath + '</div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
+  }
+
+  // --- Progress Over Time (past weeks only, 0–7 scale) ---
+  async function renderChart(currentKey) {
+    var area = document.getElementById('chartArea');
+    var currentMondayKey = getMondayOf(0); // the actual current week
+    var keys = await DB.allWeekKeys();
+    // Build a continuous timeline from earliest key to current week, excluding current week
+    var allKeys = [...new Set([...keys, currentKey])].sort();
+    // Find the earliest week
+    var earliest = allKeys[0];
+    if (!earliest) { area.innerHTML = '<div class="no-chart-msg">Log tasks over multiple weeks to see progress over time.</div>'; return; }
+    // Generate all weeks from earliest to the week before current
+    var timelineKeys = [];
+    var d = new Date(earliest + 'T00:00:00');
+    while (d.toISOString().slice(0, 10) < currentMondayKey) {
+      timelineKeys.push(d.toISOString().slice(0, 10));
+      d.setDate(d.getDate() + 7);
+    }
+    if (timelineKeys.length < 1) { area.innerHTML = '<div class="no-chart-msg">Complete a full week to see progress over time. Current week data appears next week.</div>'; return; }
+    var recent = timelineKeys.slice(-12);
+    var MAX_Y = 7;
+    var gridYs = [0, 1, 2, 3, 4, 5, 6, 7];
+    var entries = [];
+    for (var i = 0; i < recent.length; i++) {
+      var k = recent[i];
+      var wdata = await DB.loadWeek(k);
+      var ws = weekScore(wdata);
+      var wdates = getWeekDates(k);
+      entries.push({ key: k, score: ws != null ? ws : 0, label: 'W' + getWeekNum(wdates[0]) + '\n' + (fmt(wdates[0]).split(' ')[1]?.slice(0, 3) || '') });
+    }
+    function yPct(v) { return Math.min(v / MAX_Y, 1) * 100; }
+    // Zone bands for new tiers
+    var zones = [
+      { cls: 'zone-over', top: 0, bottom: (1 - 6.5/7) * 100 },
+      { cls: 'zone-good', top: (1 - 6.5/7) * 100, bottom: (1 - 5/7) * 100 },
+      { cls: 'zone-avg', top: (1 - 5/7) * 100, bottom: (1 - 4/7) * 100 },
+      { cls: 'zone-under', top: (1 - 4/7) * 100, bottom: 100 }
+    ];
+    var barsHtml = entries.map(function (e) {
+      var bc = barClass(e.score);
+      var heightPct = yPct(e.score);
+      return '<div class="chart-bar-wrap"><div class="chart-bar ' + bc + '" style="height:' + Math.max(heightPct, 2) + '%" data-val="' + e.score.toFixed(1) + '"></div></div>';
+    }).join('');
+    var gridHtml = gridYs.map(function (v) { return '<div class="grid-line" style="bottom:' + yPct(v) + '%"></div>'; }).join('');
+    var zoneHtml = zones.map(function (z) { return '<div class="zone-band ' + z.cls + '" style="top:' + z.top.toFixed(1) + '%;height:' + (z.bottom - z.top).toFixed(1) + '%"></div>'; }).join('');
+    var xLabelsHtml = entries.map(function (e) { return '<div class="x-lbl">' + e.label.replace('\n', '<br>') + '</div>'; }).join('');
+    var yLabelsHtml = gridYs.map(function (v) { return '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v + '</div>'; }).join('');
+    var svgPath = '';
+    if (entries.length > 1) {
+      var pts = entries.map(function (e, i) { return { x: (i / (entries.length - 1)) * 100, y: 100 - yPct(e.score) }; });
+      svgPath = '<svg class="line-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="' + pts.map(function (p) { return p.x.toFixed(2) + ',' + p.y.toFixed(2); }).join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="0.8" vector-effect="non-scaling-stroke"/></svg>';
     }
     area.innerHTML = '<div class="chart-wrap"><div class="y-labels">' + yLabelsHtml + '</div><div class="chart-canvas-row">' + zoneHtml + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div>' + svgPath + '</div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
   }
 
   async function renderReport(currentKey) {
     const el = document.getElementById('reportContent');
-    const data = await DB.loadWeek(currentKey), ws = weekScore(data), avg = computeTaskAvg(data), t = tier(ws);
+    const data = await DB.loadWeek(currentKey), ws = weekScore(data), t = tier(ws);
     const keys = (await DB.allWeekKeys()).sort(), cIdx = keys.indexOf(currentKey);
     const scores = [];
     for (const k of keys) { const wk = await DB.loadWeek(k); const s = weekScore(wk); if (s != null) scores.push(s); }
@@ -462,7 +522,7 @@ async function initTracker() {
     for (const k of all) {
       const d = await DB.loadWeek(k), ws = weekScore(d), dates = getWeekDates(k), t = tier(ws), tasks = countAllTasks(d);
       const dayAvgs = Object.values(d.days).map(ts => ts.length ? ts.reduce((s, t) => s + t.rating, 0) / ts.length : 0);
-      const miniBars = dayAvgs.length ? dayAvgs.map(a => { const h = Math.max((a / 7) * 20, 2); return '<div class="wm-bar" style="height:' + h + 'px;background:' + (a > 5 ? 'var(--green)' : a >= 4 ? 'var(--blue)' : a >= 3 ? 'var(--amber)' : 'var(--red)') + '"></div>'; }).join('') : '<span style="font-size:.65rem;color:var(--text3)">no data</span>';
+      const miniBars = dayAvgs.length ? dayAvgs.map(a => { const h = Math.max(a * 20, 2); return '<div class="wm-bar" style="height:' + h + 'px;background:' + (a >= 0.8 ? 'var(--green)' : a >= 0.5 ? 'var(--blue)' : a > 0 ? 'var(--amber)' : 'var(--red)') + '"></div>'; }).join('') : '<span style="font-size:.65rem;color:var(--text3)">no data</span>';
       rows.push('<div class="week-row' + (k === currentKey ? ' current' : '') + '" onclick="trackerJumpToWeek(\'' + k + '\')"><div class="wr-range">W' + getWeekNum(dates[0]) + ' · ' + fmt(dates[0]) + ' – ' + fmt(dates[6]) + '</div><div class="wr-mini">' + miniBars + '</div><div class="wr-tasks">' + tasks + ' task' + (tasks !== 1 ? 's' : '') + '</div><div class="wr-score">' + (ws != null ? ws.toFixed(1) : '—') + (t ? ' <span class="tier-badge ' + t.cls + '" style="font-size:.6rem">' + t.label + '</span>' : '') + '</div></div>');
     }
     el.innerHTML = rows.join('');
