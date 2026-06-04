@@ -37,10 +37,16 @@ DB.onReady(async function () {
 async function initTodo() {
   let tasks = await DB.loadTodos();
   let selectedPriority = 'none';
+  const collapsedDates = new Set();
   const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function ordSuffix(n) { var s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
   const now = new Date();
-  document.getElementById('today-date').textContent = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate() + ', ' + now.getFullYear();
+  document.getElementById('today-date').textContent = days[now.getDay()] + ', ' + ordSuffix(now.getDate()) + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  window.todoToggleDate = function (key) {
+    if (collapsedDates.has(key)) collapsedDates.delete(key); else collapsedDates.add(key);
+    todoRender();
+  };
 
   window.todoSelectPriority = function (el) {
     document.querySelectorAll('#tab-todo .p-tag').forEach(t => t.classList.remove('active'));
@@ -110,10 +116,14 @@ async function initTodo() {
       let heading = dateKey;
       if (dateKey !== 'unknown') {
         const d = new Date(dateKey + 'T00:00:00');
-        heading = days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+        heading = days[d.getDay()] + ', ' + ordSuffix(d.getDate()) + ' ' + months[d.getMonth()];
       }
-      html += '<li class="date-header">' + heading + '</li>';
-      html += items.map(t => `<li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}"><button class="check-btn" onclick="todoToggleTask(${t.id})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.8 7L9 1" stroke="#0f0f0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="p-dot ${t.priority}"></span><span class="task-text">${escHtml(t.text)}</span><button class="del-btn" onclick="todoDeleteTask(${t.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></li>`).join('');
+      const isCollapsed = collapsedDates.has(dateKey);
+      const doneCount = items.filter(t => t.done).length;
+      html += '<li class="date-header ' + (isCollapsed ? 'collapsed' : '') + '" onclick="todoToggleDate(\'' + dateKey + '\')"><span class="date-caret">' + (isCollapsed ? '▸' : '▾') + '</span><span class="date-label">' + heading + '</span><span class="date-count">' + doneCount + '/' + items.length + '</span></li>';
+      if (!isCollapsed) {
+        html += items.map(t => `<li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}"><button class="check-btn" onclick="todoToggleTask(${t.id})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.8 7L9 1" stroke="#0f0f0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="p-dot ${t.priority}"></span><span class="task-text">${escHtml(t.text)}</span><button class="del-btn" onclick="todoDeleteTask(${t.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></li>`).join('');
+      }
     });
     list.innerHTML = html;
   }
@@ -134,13 +144,10 @@ async function initProgress() {
 
   const PASS_COLOR = '#27ae60', FAIL_COLOR = '#ff4d6d';
   const ctx = document.getElementById('prog-chart').getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, 0, 280);
-  gradient.addColorStop(0, 'rgba(200,255,0,0.18)');
-  gradient.addColorStop(1, 'rgba(200,255,0,0)');
 
   const chart = new Chart(ctx, {
-    type: 'line',
-    data: { labels: [], datasets: [{ label: 'Progress (%)', data: [], borderColor: '#c8ff00', backgroundColor: gradient, borderWidth: 2.5, pointBackgroundColor: [], pointBorderColor: '#0a0a0f', pointBorderWidth: 2, pointRadius: 7, pointHoverRadius: 10, fill: true, tension: .35, segment: { borderColor: function (c) { return WEEK_COLORS[c.p0DataIndex % WEEK_COLORS.length]; } } }] },
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: 'Progress (%)', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 4, maxBarThickness: 56 }] },
     options: { responsive: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Syne', size: 13, weight: '700' }, bodyFont: { family: 'DM Mono', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { color: '#1e1e2a' }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'DM Mono', size: 11, weight: 'bold' } }, border: { color: '#2a2a38' } }, y: { min: 0, grid: { color: '#1e1e2a' }, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 11 }, callback: v => v + '%' }, border: { color: '#2a2a38' } } } }
   });
 
@@ -181,7 +188,6 @@ async function initProgress() {
   function updateChart() {
     chart.data.labels = rows.map(r => r.week);
     chart.data.datasets[0].data = rows.map(r => r.pct);
-    chart.data.datasets[0].pointBackgroundColor = rows.map((_, i) => WEEK_COLORS[i % WEEK_COLORS.length]);
     chart.update();
     const vals = rows.map(r => r.pct).filter(v => !isNaN(v));
     if (vals.length) {
@@ -191,14 +197,6 @@ async function initProgress() {
     applyProgressStatus();
   }
 
-  function makeFill(ctxC, color) {
-    const g = ctxC.createLinearGradient(0, 0, 0, 280);
-    const rgb = color === PASS_COLOR ? '39,174,96' : '255,77,109';
-    g.addColorStop(0, 'rgba(' + rgb + ',0.18)');
-    g.addColorStop(1, 'rgba(' + rgb + ',0)');
-    return g;
-  }
-
   function applyProgressStatus() {
     const canvas = document.getElementById('prog-chart');
     const ch = Chart.getChart ? Chart.getChart(canvas) : null;
@@ -206,20 +204,17 @@ async function initProgress() {
     const avg = rows.length ? rows.map(r => r.pct).filter(v => !isNaN(v)) : [];
     const avgVal = avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : null;
     const passed = avgVal != null && avgVal >= passingPercent;
-    const color = passed ? PASS_COLOR : FAIL_COLOR;
+    const themeColor = passed ? PASS_COLOR : FAIL_COLOR;
     const label = avgVal == null ? 'Passing target: ' + passingPercent + '%' : (passed ? 'Passing' : 'Below passing') + ' - target ' + passingPercent + '%';
-    const ctxC = canvas.getContext('2d');
     const ds = ch.data.datasets[0];
-    ds.borderColor = color;
-    ds.backgroundColor = makeFill(ctxC, color);
-    ds.pointBackgroundColor = rows.map(() => color);
-    ds.segment = { borderColor: color };
-    ch.options.plugins.tooltip.borderColor = color;
-    ch.options.plugins.tooltip.titleColor = color;
-    ch.options.scales.x.ticks.color = color;
+    ds.backgroundColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+    ds.borderColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+    ch.options.plugins.tooltip.borderColor = themeColor;
+    ch.options.plugins.tooltip.titleColor = themeColor;
+    ch.options.scales.x.ticks.color = themeColor;
     const passData = ch.data.labels.map(() => passingPercent);
     if (ch.data.datasets.length < 2) {
-      ch.data.datasets.push({ label: 'Passing %', data: passData, borderColor: '#8a8a9e', backgroundColor: 'transparent', borderDash: [6, 6], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0 });
+      ch.data.datasets.push({ type: 'line', label: 'Passing %', data: passData, borderColor: '#8a8a9e', backgroundColor: 'transparent', borderDash: [6, 6], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, tension: 0, order: 0 });
     } else { ch.data.datasets[1].data = passData; }
     const card = document.getElementById('chartCard');
     if (card) { card.classList.toggle('pass', passed); card.classList.toggle('fail', !passed); }
@@ -229,7 +224,7 @@ async function initProgress() {
       if (tb) { statusEl = document.createElement('div'); statusEl.id = 'progPassStatus'; statusEl.className = 'chart-status'; tb.appendChild(statusEl); }
     }
     if (statusEl) { statusEl.textContent = label; statusEl.className = 'chart-status ' + (passed ? 'pass' : 'fail'); }
-    document.querySelectorAll('#rowList .data-row input[type="text"]').forEach(inp => { inp.style.borderLeft = '3px solid ' + color; });
+    document.querySelectorAll('#rowList .data-row input[type="text"]').forEach(inp => { inp.style.borderLeft = '3px solid ' + themeColor; });
     ch.update();
   }
 
@@ -403,14 +398,13 @@ async function initTracker() {
     const dayTasks = data.days[selDs] || [];
     const dayAvgVal = dayTasks.length ? (dayTasks.reduce((s, t) => s + t.rating, 0) / dayTasks.length).toFixed(2) : null;
     const panel = document.getElementById('dayPanel');
-    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><label class="film-toggle" title="Mark as Film/Show"><input type="checkbox" id="taskFilmIn"/><span>Film</span></label><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="task-list" id="taskListEl"></div>';
+    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="task-list" id="taskListEl"></div>';
     const taskListEl = document.getElementById('taskListEl');
     if (!dayTasks.length) { taskListEl.innerHTML = '<div class="empty-day"><div class="emo">📝</div>No tasks for this day yet.</div>'; }
     else {
       dayTasks.forEach((task, ti) => {
         const item = document.createElement('div'); item.className = 'task-item';
-        const filmBadge = task.type === 'film' ? '<span class="film-badge">Film</span>' : '';
-        item.innerHTML = '<div class="task-item-name">' + filmBadge + escHtml(task.name) + '</div><input type="number" class="task-rating-edit" value="' + task.rating + '" step="0.1" min="0" max="2" data-ti="' + ti + '"/><button class="del-btn" data-ti="' + ti + '">×</button>';
+        item.innerHTML = '<div class="task-item-name">' + escHtml(task.name) + '</div><input type="number" class="task-rating-edit" value="' + task.rating + '" step="0.1" min="0" max="2" data-ti="' + ti + '"/><button class="del-btn" data-ti="' + ti + '">×</button>';
         taskListEl.appendChild(item);
       });
       taskListEl.querySelectorAll('.task-rating-edit').forEach(inp => {
@@ -432,16 +426,14 @@ async function initTracker() {
     document.getElementById('taskNameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { var r = document.getElementById('taskRatingIn'); if (!r.value) { r.focus(); } else { addTask(); } } });
     document.getElementById('taskRatingIn').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
     async function addTask() {
-      const nameEl = document.getElementById('taskNameIn'), ratingEl = document.getElementById('taskRatingIn'), filmEl = document.getElementById('taskFilmIn');
+      const nameEl = document.getElementById('taskNameIn'), ratingEl = document.getElementById('taskRatingIn');
       const name = nameEl.value.trim(); var rating = parseFloat(ratingEl.value);
       if (!name) { nameEl.style.borderColor = 'var(--red)'; setTimeout(() => nameEl.style.borderColor = '', 900); return; }
       if (isNaN(rating)) { ratingEl.style.borderColor = 'var(--red)'; setTimeout(() => ratingEl.style.borderColor = '', 900); return; }
       rating = Math.min(2, Math.max(0, rating));
-      const taskObj = { name, rating };
-      if (filmEl && filmEl.checked) taskObj.type = 'film';
       const d2 = await DB.loadWeek(mondayKey); if (!d2.days[selDs]) d2.days[selDs] = [];
-      d2.days[selDs].push(taskObj); await DB.saveWeek(mondayKey, d2);
-      nameEl.value = ''; ratingEl.value = ''; if (filmEl) filmEl.checked = false; render();
+      d2.days[selDs].push({ name, rating }); await DB.saveWeek(mondayKey, d2);
+      nameEl.value = ''; ratingEl.value = ''; render();
     }
     renderWeekChart(mondayKey, data, dates);
     await renderChart(mondayKey); renderReport(mondayKey); renderWeeksList(mondayKey);
@@ -537,7 +529,8 @@ async function initTracker() {
     const bestDay = dsa.length ? dsa.reduce((b, c) => c[1].avg > b[1].avg ? c : b, dsa[0]) : null;
     const worstDay = dsa.length > 1 ? dsa.reduce((b, c) => c[1].avg < b[1].avg ? c : b, dsa[0]) : null;
     const bd = bestDay ? { ds: bestDay[0], ...bestDay[1] } : null, wd = worstDay ? { ds: worstDay[0], ...worstDay[1] } : null;
-    let html = '<div class="report-grid"><div class="report-stat"><div class="rs-lbl">This Week Score</div><div class="rs-val">' + (ws != null ? ws.toFixed(1) : '—') + '<span style="font-size:.9rem;color:var(--text3)"> /7</span></div><div class="rs-sub">' + (t ? t.label : 'No data') + '</div></div><div class="report-stat"><div class="rs-lbl">vs Last Week</div><div class="rs-val" style="color:' + (prevWs != null && ws != null ? (ws >= prevWs ? 'var(--green)' : 'var(--red)') : 'var(--text3)') + '"> ' + (prevWs != null && ws != null ? (ws >= prevWs ? '↑' : '↓') + ' ' + Math.abs(ws - prevWs).toFixed(1) : '—') + '</div><div class="rs-sub">' + (prevWs != null ? 'Prev: ' + prevWs.toFixed(1) : 'No previous data') + '</div></div><div class="report-stat"><div class="rs-lbl">Best Streak</div><div class="rs-val">' + bestStreak(scores) + '<span style="font-size:.9rem;color:var(--text3)"> wk</span></div><div class="rs-sub">Consecutive above-avg weeks</div></div><div class="report-stat"><div class="rs-lbl">All-Time Avg</div><div class="rs-val">' + (scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—') + '</div><div class="rs-sub">Over ' + scores.length + ' scored week' + (scores.length !== 1 ? 's' : '') + '</div></div></div><div class="report-text">';
+    const weekTaskCount = countAllTasks(data);
+    let html = '<div class="report-grid"><div class="report-stat"><div class="rs-lbl">This Week Score</div><div class="rs-val">' + (ws != null ? ws.toFixed(1) : '—') + '<span style="font-size:.9rem;color:var(--text3)"> /7</span></div><div class="rs-sub">' + (t ? t.label : 'No data') + '</div></div><div class="report-stat"><div class="rs-lbl">Tasks Logged</div><div class="rs-val">' + weekTaskCount + '</div><div class="rs-sub">Across ' + Object.keys(data.days || {}).filter(k => (data.days[k] || []).length).length + ' day' + (Object.keys(data.days || {}).filter(k => (data.days[k] || []).length).length !== 1 ? 's' : '') + '</div></div><div class="report-stat"><div class="rs-lbl">vs Last Week</div><div class="rs-val" style="color:' + (prevWs != null && ws != null ? (ws >= prevWs ? 'var(--green)' : 'var(--red)') : 'var(--text3)') + '"> ' + (prevWs != null && ws != null ? (ws >= prevWs ? '↑' : '↓') + ' ' + Math.abs(ws - prevWs).toFixed(1) : '—') + '</div><div class="rs-sub">' + (prevWs != null ? 'Prev: ' + prevWs.toFixed(1) : 'No previous data') + '</div></div><div class="report-stat"><div class="rs-lbl">All-Time Avg</div><div class="rs-val">' + (scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—') + '</div><div class="rs-sub">Over ' + scores.length + ' scored week' + (scores.length !== 1 ? 's' : '') + '</div></div></div><div class="report-text">';
     if (ws == null) { html += '<p>No data for this week yet. Start adding tasks.</p>'; }
     else {
       html += '<p>' + openingLine(ws, prevWs) + '</p>';
@@ -568,24 +561,18 @@ async function initTracker() {
     function ordinal(n) { var s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
     var startD = dates[0], endD = dates[6];
     var rangeStr = ordinal(startD.getDate()) + ' ' + monthNames[startD.getMonth()] + ' to ' + ordinal(endD.getDate()) + ' ' + monthNames[endD.getMonth()];
-    var allTasks = [], allFilms = [];
+    var allTasks = [];
     Object.values(data.days).forEach(function (tasks) {
-      tasks.forEach(function (t) {
-        if (t.type === 'film') allFilms.push(t.name);
-        else allTasks.push(t.name);
-      });
+      tasks.forEach(function (t) { allTasks.push(t.name); });
     });
     var md = '\n' + wn + '. Things done from the ' + rangeStr + '.\n';
     md += '   Week Score: ' + ws.toFixed(1) + '\n';
     md += '   Percentage: ' + pct + '%\n';
+    md += '   Tasks Logged: ' + allTasks.length + '\n';
     md += '   \n';
     md += '   Tasks Done:/\n';
     if (allTasks.length) { allTasks.forEach(function (t, i) { md += (i + 1) + '. ' + t + '\n'; }); }
     else { md += '(No tasks logged)\n'; }
-    if (allFilms.length) {
-      md += '\nFilms & Shows:/\n';
-      allFilms.forEach(function (f, i) { md += (i + 1) + '. ' + f + '\n'; });
-    }
     var blob = new Blob([md], { type: 'text/markdown' });
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
