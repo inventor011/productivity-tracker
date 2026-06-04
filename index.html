@@ -6,7 +6,7 @@
 <title>Master Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=DM+Sans:wght@300;400;500&family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&family=Bebas+Neue&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="style.css?v=15"/>
+<link rel="stylesheet" href="style.css?v=16"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -61,8 +61,8 @@
 <div class="tool-tab" id="tab-streak"><header><div><div class="brand-sub">Daily Discipline Tracker</div><div class="brand">STREAK</div></div><div class="date-display">Today<span id="today-display"></span></div></header><main><div class="create-panel"><div class="panel-label">⬛ New Streak</div><div class="create-row"><div class="field-group"><label>Task Name</label><input type="text" id="task-name" placeholder="e.g. Morning Run, Read 20 pages…"/></div><div class="field-group"><label>Target Days</label><input type="number" id="task-days" placeholder="21" min="1" max="365"/></div><button class="btn-create" onclick="streakCreate()">+ Add</button></div></div><div class="section-header"><span class="section-title">Active Streaks</span><span class="section-count" id="streak-count">0</span></div><div class="streaks-list" id="streaks-container"><div class="empty-state" id="streak-empty-state"><span class="empty-icon">▣</span><p>No streaks yet.<br>Create one above to start building habits.</p></div></div></main><div id="streak-toast"></div><div class="confirm-overlay" id="confirm-overlay"><div class="confirm-box"><h3>Delete Streak?</h3><p id="confirm-text">This will permanently remove the streak and all its history.</p><div class="confirm-actions"><button class="btn-cancel" onclick="streakCloseConfirm()">Cancel</button><button class="btn-confirm-delete" onclick="streakConfirmDelete()">Delete</button></div></div></div></div>
 <div class="tool-tab" id="tab-logbook"><div class="lb-app"><div class="lb-sidebar"><div class="lb-tabs" id="lb-tabs"></div><div class="lb-sidebar-content" id="lb-sidebar-content"></div><div class="lb-sidebar-footer" id="lb-sidebar-footer"></div></div><div class="lb-main" id="lb-main"></div></div></div>
 </div>
-<script src="auth.js?v=15"></script>
-<script src="db.js?v=15"></script>
-<script src="app.js?v=15"></script>
+<script src="auth.js?v=16"></script>
+<script src="db.js?v=16"></script>
+<script src="app.js?v=16"></script>
 </body>
 </html>

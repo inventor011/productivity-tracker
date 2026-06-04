@@ -1,3 +1,10 @@
+// ==================== LOCAL-DATE HELPER ====================
+// Format a Date as YYYY-MM-DD using LOCAL components (NOT UTC).
+// toISOString() shifts to UTC and breaks day boundaries for non-UTC timezones.
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 // ==================== TAB SWITCHING ====================
 function switchTab(name, persist) {
   const panel = document.getElementById('tab-' + name);
@@ -306,7 +313,7 @@ async function initTracker() {
     const d = new Date(); d.setHours(0, 0, 0, 0);
     const day = d.getDay();
     d.setDate(d.getDate() - day + (offset || 0) * 7);
-    return d.toISOString().slice(0, 10);
+    return ymd(d);
   }
   function getWeekDates(mk) {
     const base = new Date(mk + 'T00:00:00');
@@ -370,7 +377,7 @@ async function initTracker() {
 
   async function render() {
     const mondayKey = getSundayOf(currentOffset), data = await DB.loadWeek(mondayKey), dates = getWeekDates(mondayKey);
-    const todayStr = new Date().toISOString().slice(0, 10), isThis = currentOffset === 0;
+    const todayStr = ymd(new Date()), isThis = currentOffset === 0;
     if (selectedDayIdx === null) { if (isThis) { selectedDayIdx = new Date().getDay(); } else selectedDayIdx = 0; }
     const wn = getWeekNum(new Date(mondayKey + 'T00:00:00'));
     document.getElementById('weekPill').textContent = 'Week ' + wn;
@@ -385,14 +392,14 @@ async function initTracker() {
     document.getElementById('manualInput').value = data.manualRating != null ? data.manualRating : '';
     const tabsEl = document.getElementById('dayTabs'); tabsEl.innerHTML = '';
     dates.forEach((d, i) => {
-      const ds = d.toISOString().slice(0, 10);
+      const ds = ymd(d);
       const tab = document.createElement('div');
       tab.className = 'day-tab' + (ds === todayStr ? ' today' : '') + (i === selectedDayIdx ? ' active' : '') + ((data.days[ds] || []).length ? ' has-data' : '');
       tab.innerHTML = '<div class="dtab-name">' + DAYS_SHORT[i] + '</div><div class="dtab-date">' + d.getDate() + '</div><div class="dtab-dot"></div>';
       tab.addEventListener('click', () => { selectedDayIdx = i; render(); });
       tabsEl.appendChild(tab);
     });
-    const selDate = dates[selectedDayIdx], selDs = selDate.toISOString().slice(0, 10);
+    const selDate = dates[selectedDayIdx], selDs = ymd(selDate);
     const dayTasks = data.days[selDs] || [];
     const dayAvgVal = dayTasks.length ? (dayTasks.reduce((s, t) => s + t.rating, 0) / dayTasks.length).toFixed(2) : null;
     const panel = document.getElementById('dayPanel');
@@ -448,7 +455,7 @@ async function initTracker() {
     var gridYs = [0, 0.5, 1.0, 1.5, 2.0];
     var points = [];
     for (var i = 0; i < 7; i++) {
-      var ds = dates[i].toISOString().slice(0, 10);
+      var ds = ymd(dates[i]);
       var tasks = data.days[ds] || [];
       var avg = tasks.length ? tasks.reduce(function (s, t) { return s + t.rating; }, 0) / tasks.length : 0;
       points.push({ label: DAYS_SHORT[i], value: avg });
@@ -478,8 +485,8 @@ async function initTracker() {
     // Generate all weeks from earliest to the week before current
     var timelineKeys = [];
     var d = new Date(earliest + 'T00:00:00');
-    while (d.toISOString().slice(0, 10) < currentMondayKey) {
-      timelineKeys.push(d.toISOString().slice(0, 10));
+    while (ymd(d) < currentMondayKey) {
+      timelineKeys.push(ymd(d));
       d.setDate(d.getDate() + 7);
     }
     if (timelineKeys.length < 1) { area.innerHTML = '<div class="no-chart-msg">Complete a full week to see progress over time. Current week data appears next week.</div>'; return; }
@@ -789,7 +796,7 @@ async function initStreak() {
     if (streak.completed) return streak; const today = todayStr(); if (!streak.lastLoggedDate) return streak;
     const diff = daysBetween(streak.lastLoggedDate, today);
     if (diff > 1) {
-      for (let i = 1; i < diff; i++) { const md = new Date(streak.lastLoggedDate); md.setDate(md.getDate() + i); const ms = md.toISOString().split('T')[0]; if (!streak.history.includes(ms)) { streak.missedDays = streak.missedDays || []; streak.missedDays.push(ms); } }
+      for (let i = 1; i < diff; i++) { const md = new Date(streak.lastLoggedDate); md.setDate(md.getDate() + i); const ms = ymd(md); if (!streak.history.includes(ms)) { streak.missedDays = streak.missedDays || []; streak.missedDays.push(ms); } }
       streak.currentStreak = 0; streak.status = 'fresh';
     }
     return streak;
@@ -843,7 +850,7 @@ async function initStreak() {
       let badgeClass = 'status-badge badge-fresh', badgeText = 'Not Started';
       if (s.completed) { badgeClass = 'status-badge badge-complete'; badgeText = 'Complete'; } else if (alreadyLogged) { badgeClass = 'status-badge badge-active'; badgeText = 'Logged Today'; } else if (s.currentStreak > 0) { badgeClass = 'status-badge badge-active'; badgeText = 'Active'; } else if (s.history.length > 0 && s.currentStreak === 0) { badgeClass = 'status-badge badge-dead'; badgeText = 'Reset'; }
       const maxDots = 60, showDots = Math.min(s.targetDays, maxDots); const histSet = new Set(s.history), missedSet = new Set(s.missedDays || []); const dotDates = []; const start = new Date(s.createdDate);
-      for (let i = 0; i < showDots; i++) { const d = new Date(start); d.setDate(d.getDate() + i); dotDates.push(d.toISOString().split('T')[0]); }
+      for (let i = 0; i < showDots; i++) { const d = new Date(start); d.setDate(d.getDate() + i); dotDates.push(ymd(d)); }
       let dotsHtml = dotDates.map((dateStr, i) => { let cls = 'dot'; if (s.completed && histSet.has(dateStr)) cls += ' done-ok'; else if (histSet.has(dateStr)) cls += ' done'; else if (missedSet.has(dateStr) && dateStr < today) cls += ' missed'; else if (dateStr === today && !alreadyLogged) cls += ' today-dot'; return '<div class="' + cls + '" title="Day ' + (i + 1) + ': ' + formatDate(dateStr) + '"></div>'; }).join('');
       if (s.targetDays > maxDots) dotsHtml += '<span style="font-size:0.55rem;color:var(--text-muted);align-self:center;margin-left:4px">+' + (s.targetDays - maxDots) + ' more</span>';
       const logDisabled = alreadyLogged || s.completed;
