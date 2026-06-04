@@ -221,7 +221,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-tracker .legend-dot{width:8px;height:8px;border-radius:2px}
 #tab-tracker .ld-over{background:var(--green)}#tab-tracker .ld-good{background:var(--blue)}#tab-tracker .ld-avg{background:var(--amber)}#tab-tracker .ld-under{background:var(--red)}
 #tab-tracker .chart-wrap{position:relative;padding-left:36px;padding-bottom:48px}
-#tab-tracker .chart-canvas-row{position:relative;height:220px}
+#tab-tracker .chart-canvas-row{position:relative;height:220px;overflow:hidden}
 #tab-tracker .y-labels{position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between}
 #tab-tracker .y-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);width:28px;text-align:right;transform:translateY(-50%);padding-right:4px}
 #tab-tracker .grid-line{position:absolute;left:0;right:0;border-top:1px dashed var(--border)}
