@@ -24,7 +24,7 @@
   // --- To-Do ---
   async function loadTodos() {
     const { data } = await sb.from('todo_tasks').select('*').eq('user_id', _uid).order('created_at');
-    return (data || []).map(r => ({ id: r.id, text: r.text, done: r.done, priority: r.priority }));
+    return (data || []).map(r => ({ id: r.id, text: r.text, done: r.done, priority: r.priority, created_at: r.created_at }));
   }
   async function saveTodo(task) {
     const { data } = await sb.from('todo_tasks').upsert({

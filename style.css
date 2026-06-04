@@ -42,6 +42,8 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-todo .p-tag[data-p="low"].active{background:#3d7a5a;border-color:#3d7a5a}
 #tab-todo .section-head{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:4px}
 #tab-todo #task-list{list-style:none;margin-top:0}
+#tab-todo .date-header{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);padding:18px 0 6px;font-family:'DM Mono',monospace;font-weight:500;border-bottom:1px solid var(--border);list-style:none}
+#tab-todo .date-header:first-child{padding-top:8px}
 #tab-todo .task-item{display:flex;align-items:center;gap:14px;padding:16px 4px;border-bottom:1px solid var(--border);animation:todo-slideIn .35s var(--ease) both;position:relative}
 #tab-todo .task-item.removing{animation:todo-slideOut .3s var(--ease) forwards}
 #tab-todo .check-btn{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);background:transparent;cursor:pointer;flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center}
@@ -197,6 +199,9 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-tracker .add-row input[type="number"]:focus{border-color:var(--accent)}
 #tab-tracker .add-btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .2s,transform .15s;white-space:nowrap}
 #tab-tracker .add-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+#tab-tracker .film-toggle{display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--text3);cursor:pointer;white-space:nowrap;letter-spacing:.04em;font-family:'DM Mono',monospace;user-select:none}
+#tab-tracker .film-toggle input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+#tab-tracker .film-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.6rem;padding:1px 6px;border-radius:4px;margin-right:6px;letter-spacing:.06em;font-family:'DM Mono',monospace;vertical-align:middle}
 #tab-tracker .task-list{display:flex;flex-direction:column;gap:6px}
 #tab-tracker .task-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;animation:tracker-slideIn .2s ease;transition:border-color .2s}
 #tab-tracker .task-item:hover{border-color:var(--border2)}
@@ -387,11 +392,11 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-streak .streak-card.complete .progress-fill{background:var(--success)}
 #tab-streak .streak-card.dead .progress-fill{background:var(--danger)}
 #tab-streak .progress-dots{display:flex;gap:3px;margin-top:8px;flex-wrap:wrap}
-#tab-streak .progress-dots .dot{width:10px;height:10px;border:1px solid var(--border);background:transparent;transition:background .2s;flex-shrink:0}
-#tab-streak .progress-dots .dot.done{background:var(--accent);border-color:var(--accent)}
-#tab-streak .progress-dots .dot.done-ok{background:var(--success);border-color:var(--success)}
-#tab-streak .progress-dots .dot.missed{background:var(--danger);border-color:var(--danger)}
-#tab-streak .progress-dots .dot.today-dot{border-color:var(--accent);animation:streak-pulse 1.5s infinite}
+#tab-streak .progress-dots .dot{width:10px;height:10px;border:1px solid var(--border);background:transparent;flex-shrink:0}
+#tab-streak .progress-dots .dot.done,#tab-streak .progress-dots .dot.done-ok{background:#22c55e !important;border-color:#22c55e !important}
+#tab-streak .progress-dots .dot.missed{background:transparent !important;border-color:var(--border) !important}
+#tab-streak .progress-dots .dot.today-dot{background:transparent;border-color:var(--border)}
+#tab-streak .streak-consistency{font-size:.7rem;color:var(--text-muted);letter-spacing:.04em;margin-top:8px;padding:0 14px 14px;font-family:'DM Mono',monospace;line-height:1.5}
 @keyframes streak-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 #tab-streak .btn-log{background:transparent;border:1px solid var(--accent);color:var(--accent);font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;padding:7px 16px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap}
 #tab-streak .btn-log:hover:not(:disabled){background:var(--accent);color:#0d0d0d}
