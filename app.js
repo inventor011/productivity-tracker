@@ -245,18 +245,11 @@ async function initProgress() {
     if (chartType === 'line') {
       ds.borderColor = themeColor;
       ds.backgroundColor = passed ? 'rgba(39,174,96,0.14)' : 'rgba(255,77,109,0.14)';
-      ds.pointBackgroundColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
-      // Per-segment coloring: green if the destination point >= passing, else red
-      ds.segment = {
-        borderColor: function (c) {
-          const idx = c.p1DataIndex;
-          const val = rows[idx] ? rows[idx].pct : 0;
-          return val >= passingPercent ? PASS_COLOR : FAIL_COLOR;
-        }
-      };
+      ds.pointBackgroundColor = rows.map(() => themeColor);
+      ds.segment = { borderColor: themeColor };
     } else {
-      ds.backgroundColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
-      ds.borderColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+      ds.backgroundColor = rows.map(() => themeColor);
+      ds.borderColor = rows.map(() => themeColor);
     }
     ch.options.plugins.tooltip.borderColor = themeColor;
     ch.options.plugins.tooltip.titleColor = themeColor;
