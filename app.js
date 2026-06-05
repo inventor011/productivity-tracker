@@ -27,6 +27,7 @@ DB.onReady(async function () {
   }
   initTodo();
   await initProgress();
+  try { await DB.migrateUTCKeys(); } catch (e) { console.warn('UTC migration skipped:', e); }
   await initTracker();
   initRanker();
   initStreak();
@@ -99,15 +100,16 @@ async function initTodo() {
     document.getElementById('progress-fill').style.width = pct + '%';
     if (!total) { list.innerHTML = '<li class="empty"><div class="empty-icon">✦</div><p>Nothing yet — your day awaits.</p></li>'; return; }
     const pOrder = { high: 0, med: 1, low: 2, none: 3 };
+    function localDayKey(ts) { return ts ? ymd(new Date(ts)) : 'unknown'; }
     const sorted = [...tasks].sort((a, b) => {
-      const da = (a.created_at || '').slice(0, 10), db = (b.created_at || '').slice(0, 10);
+      const da = localDayKey(a.created_at), db = localDayKey(b.created_at);
       if (da !== db) return da < db ? 1 : -1;
       if (a.done !== b.done) return a.done ? 1 : -1;
       return (pOrder[a.priority] ?? 3) - (pOrder[b.priority] ?? 3);
     });
     const grouped = {};
     sorted.forEach(t => {
-      const dateKey = (t.created_at || '').slice(0, 10) || 'unknown';
+      const dateKey = localDayKey(t.created_at);
       if (!grouped[dateKey]) grouped[dateKey] = [];
       grouped[dateKey].push(t);
     });
@@ -143,13 +145,47 @@ async function initProgress() {
   let passingPercent = saved ? saved.passingPercent : 70;
 
   const PASS_COLOR = '#27ae60', FAIL_COLOR = '#ff4d6d';
-  const ctx = document.getElementById('prog-chart').getContext('2d');
+  const canvasEl = document.getElementById('prog-chart');
+  const ctx = canvasEl.getContext('2d');
+  let chartType = (function () { try { return localStorage.getItem('progChartType') || 'bar'; } catch (e) { return 'bar'; } })();
+  if (chartType !== 'bar' && chartType !== 'line') chartType = 'bar';
+  let chart;
 
-  const chart = new Chart(ctx, {
-    type: 'bar',
-    data: { labels: [], datasets: [{ label: 'Progress (%)', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 4, maxBarThickness: 56 }] },
-    options: { responsive: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Syne', size: 13, weight: '700' }, bodyFont: { family: 'DM Mono', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { color: '#1e1e2a' }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'DM Mono', size: 11, weight: 'bold' } }, border: { color: '#2a2a38' } }, y: { min: 0, grid: { color: '#1e1e2a' }, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 11 }, callback: v => v + '%' }, border: { color: '#2a2a38' } } } }
-  });
+  function chartCommonOptions() {
+    return { responsive: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Syne', size: 13, weight: '700' }, bodyFont: { family: 'DM Mono', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { color: '#1e1e2a' }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'DM Mono', size: 11, weight: 'bold' } }, border: { color: '#2a2a38' } }, y: { min: 0, grid: { color: '#1e1e2a' }, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 11 }, callback: v => v + '%' }, border: { color: '#2a2a38' } } } };
+  }
+
+  function buildChart(type) {
+    let dataset;
+    if (type === 'line') {
+      dataset = { label: 'Progress (%)', data: [], borderColor: PASS_COLOR, backgroundColor: 'rgba(39,174,96,0.12)', borderWidth: 2.5, pointBackgroundColor: PASS_COLOR, pointBorderColor: '#0a0a0f', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 9, fill: true, tension: .35 };
+    } else {
+      dataset = { label: 'Progress (%)', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 4, maxBarThickness: 56 };
+    }
+    return new Chart(ctx, { type, data: { labels: [], datasets: [dataset] }, options: chartCommonOptions() });
+  }
+
+  chart = buildChart(chartType);
+
+  function applyTypeLabel() {
+    const lbl = document.getElementById('chartTypeLabel');
+    if (lbl) lbl.textContent = chartType === 'line' ? 'Line Graph' : 'Bar Graph';
+    const bBtn = document.getElementById('chartTypeBar'), lBtn = document.getElementById('chartTypeLine');
+    if (bBtn) bBtn.classList.toggle('active', chartType === 'bar');
+    if (lBtn) lBtn.classList.toggle('active', chartType === 'line');
+  }
+  applyTypeLabel();
+
+  window.progSetChartType = function (t) {
+    if (t !== 'bar' && t !== 'line') return;
+    if (t === chartType) return;
+    chartType = t;
+    try { localStorage.setItem('progChartType', chartType); } catch (e) {}
+    chart.destroy();
+    chart = buildChart(chartType);
+    applyTypeLabel();
+    updateChart();
+  };
 
   document.getElementById('chartNameInput').value = chartTitle;
   document.getElementById('chartTitleDisplay').textContent = chartTitle;
@@ -198,8 +234,7 @@ async function initProgress() {
   }
 
   function applyProgressStatus() {
-    const canvas = document.getElementById('prog-chart');
-    const ch = Chart.getChart ? Chart.getChart(canvas) : null;
+    const ch = chart;
     if (!ch) return;
     const avg = rows.length ? rows.map(r => r.pct).filter(v => !isNaN(v)) : [];
     const avgVal = avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : null;
@@ -207,8 +242,14 @@ async function initProgress() {
     const themeColor = passed ? PASS_COLOR : FAIL_COLOR;
     const label = avgVal == null ? 'Passing target: ' + passingPercent + '%' : (passed ? 'Passing' : 'Below passing') + ' - target ' + passingPercent + '%';
     const ds = ch.data.datasets[0];
-    ds.backgroundColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
-    ds.borderColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+    if (chartType === 'line') {
+      ds.borderColor = themeColor;
+      ds.backgroundColor = passed ? 'rgba(39,174,96,0.14)' : 'rgba(255,77,109,0.14)';
+      ds.pointBackgroundColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+    } else {
+      ds.backgroundColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+      ds.borderColor = rows.map(r => r.pct >= passingPercent ? PASS_COLOR : FAIL_COLOR);
+    }
     ch.options.plugins.tooltip.borderColor = themeColor;
     ch.options.plugins.tooltip.titleColor = themeColor;
     ch.options.scales.x.ticks.color = themeColor;
@@ -256,8 +297,8 @@ async function initProgress() {
     const canvas = document.getElementById('prog-chart');
     const off = document.createElement('canvas'); off.width = canvas.width; off.height = canvas.height;
     const octx = off.getContext('2d'); octx.fillStyle = '#16161f'; octx.fillRect(0, 0, off.width, off.height); octx.drawImage(canvas, 0, 0);
-    const link = document.createElement('a'); link.download = title.replace(/\s+/g, '-').toLowerCase() + '.png'; link.href = off.toDataURL('image/png'); link.click();
-    progShowToast('Graph downloaded!');
+    const link = document.createElement('a'); link.download = title.replace(/\s+/g, '-').toLowerCase() + '-' + chartType + '.png'; link.href = off.toDataURL('image/png'); link.click();
+    progShowToast(chartType === 'line' ? 'Line graph downloaded!' : 'Bar graph downloaded!');
   };
   window.progDownloadCSV = function () {
     const title = document.getElementById('chartNameInput').value || 'progress';
@@ -325,13 +366,27 @@ async function initTracker() {
     if (!tasks || !tasks.length) return 0;
     return tasks.reduce((s, t) => s + t.rating, 0) / tasks.length;
   }
-  function weekScore(data) {
+  function validDayKeys(weekKey) {
+    if (!weekKey) return null;
+    return getWeekDates(weekKey).map(ymd);
+  }
+  function weekScore(data, weekKey) {
     if (data.manualRating != null) return +data.manualRating;
-    var dates = Object.keys(data.days);
-    if (!dates.length) return null;
-    var sum = 0;
-    Object.values(data.days).forEach(function (tasks) { sum += dayAvg(tasks); });
-    return +sum.toFixed(2);
+    const validKeys = validDayKeys(weekKey);
+    let sum = 0, hasData = false;
+    if (validKeys) {
+      validKeys.forEach(function (ds) {
+        const tasks = data.days[ds];
+        if (tasks && tasks.length) { sum += dayAvg(tasks); hasData = true; }
+      });
+    } else {
+      // Fallback when weekKey unknown — sum all
+      const allDates = Object.keys(data.days);
+      if (!allDates.length) return null;
+      Object.values(data.days).forEach(function (tasks) { sum += dayAvg(tasks); });
+      hasData = true;
+    }
+    return hasData ? +sum.toFixed(2) : null;
   }
   function tier(score) {
     if (score == null) return null;
@@ -342,7 +397,13 @@ async function initTracker() {
   }
   function barClass(s) { if (s == null) return 'bar-empty'; if (s > 6.5) return 'bar-over'; if (s >= 5) return 'bar-good'; if (s >= 4) return 'bar-avg'; return 'bar-under'; }
   function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-  function countAllTasks(data) { return Object.values(data.days).reduce((s, ts) => s + ts.length, 0); }
+  function countAllTasks(data, weekKey) {
+    const validKeys = validDayKeys(weekKey);
+    if (!validKeys) return Object.values(data.days).reduce((s, ts) => s + ts.length, 0);
+    let count = 0;
+    validKeys.forEach(ds => { const ts = data.days[ds]; if (ts) count += ts.length; });
+    return count;
+  }
   function tierDesc(score) { if (score == null) return ''; if (score > 6.5) return 'Near-perfect discipline.'; if (score >= 5) return 'Strong performance this week.'; if (score >= 4) return 'Meeting the baseline.'; return 'Below baseline.'; }
   function bestStreak(scores) { let st = 0, b = 0; scores.forEach(s => { if (s >= 4) { st++; b = Math.max(b, st); } else st = 0; }); return b; }
   function openingLine(ws, prev) {
@@ -378,7 +439,7 @@ async function initTracker() {
     document.getElementById('weekPill').textContent = 'Week ' + wn;
     document.getElementById('weekTitle').textContent = isThis ? 'This Week' : currentOffset < 0 ? Math.abs(currentOffset) + ' Week' + (Math.abs(currentOffset) > 1 ? 's' : '') + ' Ago' : currentOffset + ' Week Ahead';
     document.getElementById('weekRange').textContent = fmt(dates[0]) + '  –  ' + fmt(dates[6]);
-    const ws = weekScore(data), t = tier(ws);
+    const ws = weekScore(data, mondayKey), t = tier(ws);
     document.getElementById('sc-week').textContent = ws != null ? ws.toFixed(1) : '—';
     document.getElementById('sc-week-sub').textContent = data.manualRating != null ? '★ Manual override' : (ws != null ? 'Sum of daily averages' : 'No data yet');
     const tierEl = document.getElementById('sc-tier'), tierSub = document.getElementById('sc-tier-sub');
@@ -489,7 +550,7 @@ async function initTracker() {
     for (var i = 0; i < recent.length; i++) {
       var k = recent[i];
       var wdata = await DB.loadWeek(k);
-      var ws = weekScore(wdata);
+      var ws = weekScore(wdata, k);
       var wdates = getWeekDates(k);
       entries.push({ key: k, score: ws != null ? ws : 0, label: 'W' + getWeekNum(wdates[0]) + '\n' + (fmt(wdates[0]).split(' ')[1]?.slice(0, 3) || '') });
     }
@@ -515,21 +576,24 @@ async function initTracker() {
 
   async function renderReport(currentKey) {
     const el = document.getElementById('reportContent');
-    const data = await DB.loadWeek(currentKey), ws = weekScore(data), t = tier(ws);
+    const data = await DB.loadWeek(currentKey), ws = weekScore(data, currentKey), t = tier(ws);
     const keys = (await DB.allWeekKeys()).sort(), cIdx = keys.indexOf(currentKey);
     const scores = [];
-    for (const k of keys) { const wk = await DB.loadWeek(k); const s = weekScore(wk); if (s != null) scores.push(s); }
+    for (const k of keys) { const wk = await DB.loadWeek(k); const s = weekScore(wk, k); if (s != null) scores.push(s); }
     const prevKey = cIdx > 0 ? keys[cIdx - 1] : null;
-    let prevWs = null; if (prevKey) { const pw = await DB.loadWeek(prevKey); prevWs = weekScore(pw); }
+    let prevWs = null; if (prevKey) { const pw = await DB.loadWeek(prevKey); prevWs = weekScore(pw, prevKey); }
     let dayStats = {};
+    const validReportKeys = new Set(validDayKeys(currentKey) || []);
     Object.entries(data.days).forEach(([ds, tasks]) => {
+      if (validReportKeys.size && !validReportKeys.has(ds)) return;
       if (tasks.length) { const a = tasks.reduce((s, t) => s + t.rating, 0) / tasks.length; dayStats[ds] = { avg: a, count: tasks.length }; }
     });
     const dsa = Object.entries(dayStats);
     const bestDay = dsa.length ? dsa.reduce((b, c) => c[1].avg > b[1].avg ? c : b, dsa[0]) : null;
     const worstDay = dsa.length > 1 ? dsa.reduce((b, c) => c[1].avg < b[1].avg ? c : b, dsa[0]) : null;
     const bd = bestDay ? { ds: bestDay[0], ...bestDay[1] } : null, wd = worstDay ? { ds: worstDay[0], ...worstDay[1] } : null;
-    const weekTaskCount = countAllTasks(data);
+    const weekTaskCount = countAllTasks(data, currentKey);
+    const validDayKeysSet = new Set(validDayKeys(currentKey) || []);
     let html = '<div class="report-grid"><div class="report-stat"><div class="rs-lbl">This Week Score</div><div class="rs-val">' + (ws != null ? ws.toFixed(1) : '—') + '<span style="font-size:.9rem;color:var(--text3)"> /7</span></div><div class="rs-sub">' + (t ? t.label : 'No data') + '</div></div><div class="report-stat"><div class="rs-lbl">Tasks Logged</div><div class="rs-val">' + weekTaskCount + '</div><div class="rs-sub">Across ' + Object.keys(data.days || {}).filter(k => (data.days[k] || []).length).length + ' day' + (Object.keys(data.days || {}).filter(k => (data.days[k] || []).length).length !== 1 ? 's' : '') + '</div></div><div class="report-stat"><div class="rs-lbl">vs Last Week</div><div class="rs-val" style="color:' + (prevWs != null && ws != null ? (ws >= prevWs ? 'var(--green)' : 'var(--red)') : 'var(--text3)') + '"> ' + (prevWs != null && ws != null ? (ws >= prevWs ? '↑' : '↓') + ' ' + Math.abs(ws - prevWs).toFixed(1) : '—') + '</div><div class="rs-sub">' + (prevWs != null ? 'Prev: ' + prevWs.toFixed(1) : 'No previous data') + '</div></div><div class="report-stat"><div class="rs-lbl">All-Time Avg</div><div class="rs-val">' + (scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—') + '</div><div class="rs-sub">Over ' + scores.length + ' scored week' + (scores.length !== 1 ? 's' : '') + '</div></div></div><div class="report-text">';
     if (ws == null) { html += '<p>No data for this week yet. Start adding tasks.</p>'; }
     else {
@@ -836,7 +900,7 @@ async function initStreak() {
       let cardClass = 'streak-card'; if (s.completed) cardClass += ' complete'; else if (s.currentStreak > 0) cardClass += ' active'; else if (s.currentStreak === 0 && s.history.length > 0 && !alreadyLogged) cardClass += ' dead';
       let badgeClass = 'status-badge badge-fresh', badgeText = 'Not Started';
       if (s.completed) { badgeClass = 'status-badge badge-complete'; badgeText = 'Complete'; } else if (alreadyLogged) { badgeClass = 'status-badge badge-active'; badgeText = 'Logged Today'; } else if (s.currentStreak > 0) { badgeClass = 'status-badge badge-active'; badgeText = 'Active'; } else if (s.history.length > 0 && s.currentStreak === 0) { badgeClass = 'status-badge badge-dead'; badgeText = 'Reset'; }
-      const maxDots = 60, showDots = Math.min(s.targetDays, maxDots); const histSet = new Set(s.history), missedSet = new Set(s.missedDays || []); const dotDates = []; const start = new Date(s.createdDate);
+      const maxDots = 365, showDots = Math.min(s.targetDays, maxDots); const histSet = new Set(s.history), missedSet = new Set(s.missedDays || []); const dotDates = []; const start = new Date(s.createdDate);
       for (let i = 0; i < showDots; i++) { const d = new Date(start); d.setDate(d.getDate() + i); dotDates.push(ymd(d)); }
       let dotsHtml = dotDates.map((dateStr, i) => { let cls = 'dot'; if (s.completed && histSet.has(dateStr)) cls += ' done-ok'; else if (histSet.has(dateStr)) cls += ' done'; else if (missedSet.has(dateStr) && dateStr < today) cls += ' missed'; else if (dateStr === today && !alreadyLogged) cls += ' today-dot'; return '<div class="' + cls + '" title="Day ' + (i + 1) + ': ' + formatDate(dateStr) + '"></div>'; }).join('');
       if (s.targetDays > maxDots) dotsHtml += '<span style="font-size:0.55rem;color:var(--text-muted);align-self:center;margin-left:4px">+' + (s.targetDays - maxDots) + ' more</span>';

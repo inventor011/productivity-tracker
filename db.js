@@ -82,6 +82,80 @@
     return (data || []).map(r => r.week_key);
   }
 
+  // One-time migration: shifts day-keys that were stored under UTC-shifted values
+  // (because old code used toISOString().slice(0,10) on local-midnight Date objects)
+  // forward by 1 day so they land in the correct local Sunday-based week.
+  function _shiftYmd(s, days) {
+    const d = new Date(s + 'T00:00:00');
+    d.setDate(d.getDate() + days);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function _sundayOf(s) {
+    const d = new Date(s + 'T00:00:00');
+    d.setDate(d.getDate() - d.getDay());
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  async function migrateUTCKeys() {
+    const flagKey = 'utcMigrationV1:' + _uid;
+    try { if (localStorage.getItem(flagKey) === 'done') return; } catch (e) { return; }
+    const { data: records } = await sb.from('week_tracker').select('*').eq('user_id', _uid);
+    if (!records || !records.length) { try { localStorage.setItem(flagKey, 'done'); } catch (e) {} return; }
+    const updates = {};
+    const toDelete = [];
+    for (const rec of records) {
+      const wk = rec.week_key;
+      const days = rec.days || {};
+      const dayKeys = Object.keys(days).filter(k => days[k] && days[k].length);
+      if (!dayKeys.length) continue;
+      const wkEnd = _shiftYmd(wk, 6);
+      const outOfRange = dayKeys.filter(k => k < wk || k > wkEnd);
+      if (outOfRange.length === 0) continue;
+      // Shift every day in this record forward by 1 day, re-homed to its proper Sunday
+      for (const oldDk of dayKeys) {
+        const newDk = _shiftYmd(oldDk, 1);
+        const newWk = _sundayOf(newDk);
+        if (!updates[newWk]) updates[newWk] = { days: {}, manualRating: null };
+        if (!updates[newWk].days[newDk]) updates[newWk].days[newDk] = days[oldDk];
+      }
+      if (rec.manual_rating != null) {
+        const newWk = _shiftYmd(wk, 1);
+        if (!updates[newWk]) updates[newWk] = { days: {}, manualRating: null };
+        if (updates[newWk].manualRating == null) updates[newWk].manualRating = rec.manual_rating;
+      }
+      toDelete.push(wk);
+    }
+    // Merge existing (correct) records' contents into updates so we don't lose data on overwrite
+    for (const rec of records) {
+      if (!updates[rec.week_key]) continue;
+      const days = rec.days || {};
+      Object.keys(days).forEach(dk => {
+        if (!updates[rec.week_key].days[dk] && days[dk] && days[dk].length) {
+          updates[rec.week_key].days[dk] = days[dk];
+        }
+      });
+      if (rec.manual_rating != null && updates[rec.week_key].manualRating == null) {
+        updates[rec.week_key].manualRating = rec.manual_rating;
+      }
+    }
+    // Write the corrected records
+    for (const [wk, payload] of Object.entries(updates)) {
+      await sb.from('week_tracker').upsert({
+        user_id: _uid,
+        week_key: wk,
+        manual_rating: payload.manualRating,
+        days: payload.days,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,week_key' });
+    }
+    // Delete the old shifted records
+    for (const wk of toDelete) {
+      // Don't delete if the same key was also a target of merging
+      if (updates[wk]) continue;
+      await sb.from('week_tracker').delete().eq('user_id', _uid).eq('week_key', wk);
+    }
+    try { localStorage.setItem(flagKey, 'done'); } catch (e) {}
+  }
+
   // --- Ranker ---
   async function loadRanker() {
     const { data } = await sb.from('ranker_data').select('*').eq('user_id', _uid).maybeSingle();
@@ -145,7 +219,7 @@
     uid, onReady,
     loadTodos, insertTodo, updateTodo, deleteTodo,
     loadProgress, saveProgress,
-    loadWeek, saveWeek, allWeekKeys,
+    loadWeek, saveWeek, allWeekKeys, migrateUTCKeys,
     loadRanker, saveRanker,
     loadStreaks, saveStreaks,
     loadLogbook, saveLogbook,

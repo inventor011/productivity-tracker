@@ -88,6 +88,11 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-progress .chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
 #tab-progress .chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 #tab-progress .chart-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
+#tab-progress .chart-type-toggle{display:inline-flex;margin-top:8px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+#tab-progress .chart-type-btn{background:transparent;border:none;padding:5px 14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+#tab-progress .chart-type-btn:not(:last-child){border-right:1px solid var(--border)}
+#tab-progress .chart-type-btn.active{background:var(--accent);color:#0a0a0f}
+#tab-progress .chart-type-btn:hover:not(.active){color:var(--text)}
 #tab-progress .chart-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-top:4px;color:var(--text)}
 #tab-progress .chart-stats{display:flex;gap:20px}
 #tab-progress .stat{text-align:right}
@@ -381,20 +386,20 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-streak .task-name{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--text);margin-bottom:6px}
 #tab-streak .streak-meta{font-size:.65rem;color:var(--text-muted);letter-spacing:.1em;display:flex;gap:16px;align-items:center}
 #tab-streak .streak-meta .status-badge{padding:1px 8px;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase}
-#tab-streak .badge-active{background:#3a2800;color:var(--accent)}
+#tab-streak .badge-active{background:#0d3320;color:#22c55e}
 #tab-streak .badge-complete{background:#0d3320;color:var(--success)}
 #tab-streak .badge-dead{background:#3a0808;color:var(--danger)}
 #tab-streak .badge-fresh{background:var(--surface2);color:var(--text-muted)}
 #tab-streak .card-center{text-align:center;min-width:90px}
-#tab-streak .streak-number{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;line-height:1;color:var(--accent);transition:color .3s}
-#tab-streak .streak-card.complete .streak-number{color:var(--success)}
+#tab-streak .streak-number{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;line-height:1;color:#22c55e;transition:color .3s}
+#tab-streak .streak-card.complete .streak-number{color:#22c55e}
 #tab-streak .streak-card.dead .streak-number{color:var(--danger);opacity:.5}
 #tab-streak .streak-label{font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted);margin-top:-2px}
 #tab-streak .card-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 #tab-streak .progress-wrap{width:100%;padding:0 20px 16px}
 #tab-streak .progress-track{height:3px;background:var(--surface2);width:100%;position:relative;overflow:hidden}
-#tab-streak .progress-fill{height:100%;background:var(--accent);transition:width .5s cubic-bezier(.4,0,.2,1)}
-#tab-streak .streak-card.complete .progress-fill{background:var(--success)}
+#tab-streak .progress-fill{height:100%;background:#22c55e;transition:width .5s cubic-bezier(.4,0,.2,1)}
+#tab-streak .streak-card.complete .progress-fill{background:#22c55e}
 #tab-streak .streak-card.dead .progress-fill{background:var(--danger)}
 #tab-streak .progress-dots{display:flex;gap:3px;margin-top:8px;flex-wrap:wrap}
 #tab-streak .progress-dots .dot{width:10px;height:10px;border:1px solid var(--border);background:transparent;flex-shrink:0}
