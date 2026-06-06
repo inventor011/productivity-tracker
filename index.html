@@ -6,7 +6,7 @@
 <title>Master Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=DM+Sans:wght@300;400;500&family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&family=Bebas+Neue&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="style.css?v=20"/>
+<link rel="stylesheet" href="style.css?v=21"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -41,9 +41,9 @@
 </div>
 <nav id="app-nav" style="display:none">
   <span class="nav-brand">⬛ DASH</span>
-  <button class="nav-tab active" data-tab="todo" onclick="switchTab('todo')"><span class="nav-icon">☑</span> To-Do</button>
+  <button class="nav-tab active" data-tab="tracker" onclick="switchTab('tracker')"><span class="nav-icon">📅</span> Tracker</button>
+  <button class="nav-tab" data-tab="todo" onclick="switchTab('todo')"><span class="nav-icon">☑</span> To-Do</button>
   <button class="nav-tab" data-tab="progress" onclick="switchTab('progress')"><span class="nav-icon">📈</span> Progress</button>
-  <button class="nav-tab" data-tab="tracker" onclick="switchTab('tracker')"><span class="nav-icon">📅</span> Tracker</button>
   <button class="nav-tab" data-tab="ranker" onclick="switchTab('ranker')"><span class="nav-icon">✦</span> Ranker</button>
   <button class="nav-tab" data-tab="streak" onclick="switchTab('streak')"><span class="nav-icon">🔥</span> Streak</button>
   <button class="nav-tab" data-tab="logbook" onclick="switchTab('logbook')"><span class="nav-icon">📋</span> Logbook</button>
@@ -61,8 +61,18 @@
 <div class="tool-tab" id="tab-streak"><header><div><div class="brand-sub">Daily Discipline Tracker</div><div class="brand">STREAK</div></div><div class="date-display">Today<span id="today-display"></span></div></header><main><div class="create-panel"><div class="panel-label">⬛ New Streak</div><div class="create-row"><div class="field-group"><label>Task Name</label><input type="text" id="task-name" placeholder="e.g. Morning Run, Read 20 pages…"/></div><div class="field-group"><label>Target Days</label><input type="number" id="task-days" placeholder="21" min="1" max="365"/></div><button class="btn-create" onclick="streakCreate()">+ Add</button></div></div><div class="section-header"><span class="section-title">Active Streaks</span><span class="section-count" id="streak-count">0</span></div><div class="streaks-list" id="streaks-container"><div class="empty-state" id="streak-empty-state"><span class="empty-icon">▣</span><p>No streaks yet.<br>Create one above to start building habits.</p></div></div></main><div id="streak-toast"></div><div class="confirm-overlay" id="confirm-overlay"><div class="confirm-box"><h3>Delete Streak?</h3><p id="confirm-text">This will permanently remove the streak and all its history.</p><div class="confirm-actions"><button class="btn-cancel" onclick="streakCloseConfirm()">Cancel</button><button class="btn-confirm-delete" onclick="streakConfirmDelete()">Delete</button></div></div></div></div>
 <div class="tool-tab" id="tab-logbook"><div class="lb-app"><div class="lb-sidebar"><div class="lb-tabs" id="lb-tabs"></div><div class="lb-sidebar-content" id="lb-sidebar-content"></div><div class="lb-sidebar-footer" id="lb-sidebar-footer"></div></div><div class="lb-main" id="lb-main"></div></div></div>
 </div>
-<script src="auth.js?v=20"></script>
-<script src="db.js?v=20"></script>
-<script src="app.js?v=20"></script>
+<div id="app-footer" style="display:none">
+  <button id="footer-our-story" class="footer-link">📖 Our Story</button>
+</div>
+<div id="story-modal" class="story-modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="story-modal-title">
+  <div class="story-modal-card">
+    <button id="story-modal-close" class="story-modal-close" aria-label="Close">×</button>
+    <h2 id="story-modal-title" class="story-modal-title"></h2>
+    <div id="story-modal-body" class="story-modal-body"></div>
+  </div>
+</div>
+<script src="auth.js?v=21"></script>
+<script src="db.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>

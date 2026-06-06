@@ -205,7 +205,7 @@
   // --- Prefs ---
   async function loadPrefs() {
     const { data } = await sb.from('user_prefs').select('*').eq('user_id', _uid).maybeSingle();
-    return data || { active_tab: 'todo', tracker_theme: 'light' };
+    return data || { active_tab: 'tracker', tracker_theme: 'light' };
   }
   async function savePrefs(obj) {
     await sb.from('user_prefs').upsert({

@@ -137,7 +137,7 @@ async function initTodo() {
 // ==================== TAB 2: PROGRESS ====================
 async function initProgress() {
   const WEEK_COLORS = ['#c8ff00','#7c6fff','#ff6b8a','#00d4aa','#ff9f43','#54a0ff','#ff6348','#5f27cd','#01a3a4','#f368e0','#10ac84','#ee5a24'];
-  const defaultRows = [{ week: 'Week 1', pct: 50 }, { week: 'Week 2', pct: 20 }, { week: 'Week 3', pct: 65 }];
+  const defaultRows = [{ week: 'Week 1', pct: 0 }];
 
   let saved = await DB.loadProgress();
   let rows = saved ? saved.rows : defaultRows;
@@ -609,16 +609,16 @@ async function initTracker() {
     }
     html += '</div>';
     if (ws != null) {
-      html += '<div style="margin-top:16px"><button class="btn btn-primary" id="downloadMdBtn" style="font-size:.8rem;padding:8px 18px">↓ Download Weekly Report (.md)</button></div>';
+      html += '<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="downloadMdBtn" style="font-size:.8rem;padding:8px 18px">↓ Download as .md</button><button class="btn btn-ghost" id="downloadTxtBtn" style="font-size:.8rem;padding:8px 18px">↓ Download as .txt</button></div>';
     }
     el.innerHTML = html;
-    var dlBtn = document.getElementById('downloadMdBtn');
-    if (dlBtn) {
-      dlBtn.addEventListener('click', function () { generateWeeklyMd(currentKey, data, ws); });
-    }
+    var mdBtn = document.getElementById('downloadMdBtn');
+    var txtBtn = document.getElementById('downloadTxtBtn');
+    if (mdBtn) mdBtn.addEventListener('click', function () { downloadWeeklyReport(currentKey, data, ws, 'md'); });
+    if (txtBtn) txtBtn.addEventListener('click', function () { downloadWeeklyReport(currentKey, data, ws, 'txt'); });
   }
 
-  function generateWeeklyMd(weekKey, data, ws) {
+  function buildWeeklyReportContent(weekKey, data, ws) {
     var dates = getWeekDates(weekKey);
     var wn = getWeekNum(dates[0]);
     var pct = Math.round(ws / 7 * 10000) / 100;
@@ -626,22 +626,30 @@ async function initTracker() {
     function ordinal(n) { var s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
     var startD = dates[0], endD = dates[6];
     var rangeStr = ordinal(startD.getDate()) + ' ' + monthNames[startD.getMonth()] + ' to ' + ordinal(endD.getDate()) + ' ' + monthNames[endD.getMonth()];
+    var validSet = new Set(validDayKeys(weekKey) || []);
     var allTasks = [];
-    Object.values(data.days).forEach(function (tasks) {
-      tasks.forEach(function (t) { allTasks.push(t.name); });
+    Object.keys(data.days || {}).forEach(function (dk) {
+      if (validSet.size && !validSet.has(dk)) return;
+      (data.days[dk] || []).forEach(function (t) { allTasks.push(t.name); });
     });
-    var md = '\n' + wn + '. Things done from the ' + rangeStr + '.\n';
-    md += '   Week Score: ' + ws.toFixed(2) + '\n';
-    md += '   Percentage: ' + pct + '%\n';
-    md += '   Tasks Logged: ' + allTasks.length + '\n';
-    md += '   \n';
-    md += '   Tasks Done:/\n';
-    if (allTasks.length) { allTasks.forEach(function (t, i) { md += (i + 1) + '. ' + t + '\n'; }); }
-    else { md += '(No tasks logged)\n'; }
-    var blob = new Blob([md], { type: 'text/markdown' });
+    var out = '\n' + wn + '. Things done from the ' + rangeStr + '.\n';
+    out += '   Week Score: ' + ws.toFixed(2) + '\n';
+    out += '   Percentage: ' + pct + '%\n';
+    out += '   Tasks Logged: ' + allTasks.length + '\n';
+    out += '   \n';
+    out += '   Tasks Done:/\n';
+    if (allTasks.length) { allTasks.forEach(function (t, i) { out += (i + 1) + '. ' + t + '\n'; }); }
+    else { out += '(No tasks logged)\n'; }
+    return { content: out, weekNum: wn };
+  }
+
+  function downloadWeeklyReport(weekKey, data, ws, fmt) {
+    var built = buildWeeklyReportContent(weekKey, data, ws);
+    var mime = fmt === 'txt' ? 'text/plain' : 'text/markdown';
+    var blob = new Blob([built.content], { type: mime });
     var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'Week-' + wn + '-Report.md';
+    link.download = 'Week-' + built.weekNum + '-Report.' + fmt;
     link.click();
   }
 
@@ -991,6 +999,26 @@ async function initLogbook() {
   async function removeLink(projId, taskId, linkId) { const p = findProj(projId); if (!p) return; const t = findTask(p.children, taskId); if (!t) return; t.links = t.links.filter(l => l.id !== linkId); render(); save(); }
   function updateNotes(projId, taskId, val) { const p = findProj(projId); if (!p) return; const t = findTask(p.children, taskId); if (!t) return; t.notes = val; save(); }
   function h(tag, attrs) { const el = document.createElement(tag); const ch = Array.from(arguments).slice(2); if (attrs) Object.entries(attrs).forEach(([k, v]) => { if (k === 'className') el.className = v; else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v); else if (k.startsWith('on')) el.addEventListener(k.slice(2).toLowerCase(), v); else el.setAttribute(k, v); }); ch.flat(9).forEach(c => { if (c == null) return; el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); }); return el; }
+  function collectCompletedTimestamps(node, out) {
+    if (!node.children || !node.children.length) {
+      if (node.done && node.completedAt) out.push(node.completedAt);
+      return;
+    }
+    node.children.forEach(function (c) { collectCompletedTimestamps(c, out); });
+  }
+  function projectSummaryDates(p) {
+    var parts = ['Created ' + fmtDate(p.createdAt)];
+    var ts = [];
+    (p.children || []).forEach(function (t) { collectCompletedTimestamps(t, ts); });
+    if (ts.length) {
+      ts.sort(function (a, b) { return a - b; });
+      parts.push(h('span', { className: 'lb-summary-sep' }, '·'));
+      parts.push('First task completed ' + fmtDate(ts[0]));
+      parts.push(h('span', { className: 'lb-summary-sep' }, '·'));
+      parts.push('Last task completed ' + fmtDate(ts[ts.length - 1]));
+    }
+    return parts;
+  }
   function statusColor(s, pct) {
     if (s === 'done') return 'var(--lb-green)';
     if (s === 'ip') return (typeof pct === 'number' && pct >= 50) ? 'var(--lb-green)' : 'var(--lb-amber)';
@@ -1002,10 +1030,84 @@ async function initLogbook() {
   function renderTabs() { const el = document.getElementById('lb-tabs'); el.innerHTML = ''; ['active', 'done', 'log'].forEach(t => { const label = t === 'active' ? 'Active' : t === 'done' ? 'Done' : 'Log'; el.appendChild(h('div', { className: 'lb-tab' + (S.tab === t ? ' active' : ''), onClick: () => { S.tab = t; render(); } }, label)); }); }
   function renderSidebarContent() { const el = document.getElementById('lb-sidebar-content'); el.innerHTML = ''; if (S.tab === 'active') { const active = S.projects.filter(p => projPct(p) < 100); if (!active.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No active projects')); return; } active.forEach(p => { const pct = projPct(p); const st = projStatus(p); const isArmed = S._pendingDelProj === p.id; const row = h('div', { className: 'lb-proj-row' + (S.activeId === p.id ? ' selected' : ''), onClick: () => { S.activeId = p.id; save(); render(); } }, h('div', { className: 'lb-proj-dot', style: { background: statusColor(st, pct) } }), h('div', { className: 'lb-proj-info' }, h('div', { className: 'lb-proj-title' }, p.title), h('div', { className: 'lb-proj-bar-wrap' }, h('div', { className: 'lb-proj-bar', style: { width: pct + '%', background: statusColor(st, pct) } }))), h('div', { className: 'lb-proj-pct' }, pct + '%'), h('div', { className: 'lb-proj-del' + (isArmed ? ' armed' : ''), onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelProjTimer); S._pendingDelProj = null; deleteProject(p.id); return; } S._pendingDelProj = p.id; render(); S._pendingDelProjTimer = setTimeout(() => { S._pendingDelProj = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); el.appendChild(row); }); } else if (S.tab === 'done') { const done = S.projects.filter(p => projPct(p) >= 100); if (!done.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No completed projects')); return; } done.forEach(p => { el.appendChild(h('div', { className: 'lb-done-row', style: { cursor: 'pointer' }, onClick: () => { S.activeId = p.id; S.tab = 'active'; save(); render(); } }, h('div', { className: 'lb-done-title' }, p.title), h('div', { className: 'lb-done-ts' }, p.completedAt ? fmtFull(p.completedAt) : ''))); }); } else { if (!S.log.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No activity yet')); return; } S.log.forEach(e => { el.appendChild(h('div', { className: 'lb-log-entry' }, h('div', { className: 'lb-log-dot', style: { background: logColor(e.action) } }), h('div', { className: 'lb-log-body' }, h('div', { className: 'lb-log-desc' }, ...logDesc(e)), h('div', { className: 'lb-log-ts' }, fmtFull(e.ts))))); }); } }
   function renderSidebarFooter() { const el = document.getElementById('lb-sidebar-footer'); el.innerHTML = ''; if (S._addingProject) { const wrap = h('div', { className: 'lb-add-proj-row' }); const inp = h('input', { placeholder: 'Project name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } if (ev.key === 'Escape') { S._addingProject = false; render(); } } }); const btn = h('button', { onClick: () => { if (inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } } }, 'Add'); wrap.append(inp, btn); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-new-proj-btn', onClick: () => { S._addingProject = true; render(); } }, '+ New Project')); } }
-  function renderMain() { const el = document.getElementById('lb-main'); el.innerHTML = ''; const p = activeProj(); if (!p) { el.appendChild(h('div', { className: 'lb-empty-state' }, h('div', { className: 'icon' }, '📋'), h('p', {}, 'Select or create a project'))); return; } const pct = projPct(p); const st = projStatus(p); const stLabel = st === 'done' ? 'Completed' : st === 'ip' ? 'In Progress' : 'Not Started'; const header = h('div', { className: 'lb-proj-header' }, h('h1', { style: { cursor: 'pointer' }, title: 'Double-click to rename', onDblclick: function () { var newName = prompt('Rename project:', p.title); if (newName && newName.trim()) renameProject(p.id, newName.trim()); } }, p.title), h('div', { className: 'meta' }, 'Created ' + fmtDate(p.createdAt)), h('div', { className: 'lb-header-bar-wrap' }, h('div', { className: 'lb-header-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-header-row' }, h('div', { className: 'lb-header-pct', style: { color: statusColor(st, pct) } }, pct + '%'), h('div', { className: 'lb-status-badge ' + st, style: st === 'ip' ? { background: pct >= 50 ? 'rgba(39,174,96,.12)' : 'rgba(230,126,34,.12)', color: statusColor(st, pct) } : {} }, stLabel))); el.appendChild(header); if (S.addingTop) { const wrap = h('div', { className: 'lb-add-top-input' }); const inp = h('input', { placeholder: 'Task name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.addingTop = false; createTask(p.id, inp.value.trim()); } if (ev.key === 'Escape') { S.addingTop = false; render(); } } }); wrap.appendChild(inp); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-add-task-btn', onClick: () => { S.addingTop = true; render(); } }, '+ Add task')); } const tree = h('div', {}); p.children.forEach(t => tree.appendChild(renderTaskNode(t, p))); el.appendChild(tree); }
+  function renderMain() { const el = document.getElementById('lb-main'); el.innerHTML = ''; const p = activeProj(); if (!p) { el.appendChild(h('div', { className: 'lb-empty-state' }, h('div', { className: 'icon' }, '📋'), h('p', {}, 'Select or create a project'))); return; } const pct = projPct(p); const st = projStatus(p); const stLabel = st === 'done' ? 'Completed' : st === 'ip' ? 'In Progress' : 'Not Started'; const header = h('div', { className: 'lb-proj-header' }, h('h1', { style: { cursor: 'pointer' }, title: 'Double-click to rename', onDblclick: function () { var newName = prompt('Rename project:', p.title); if (newName && newName.trim()) renameProject(p.id, newName.trim()); } }, p.title), h('div', { className: 'meta lb-project-summary' }, ...projectSummaryDates(p)), h('div', { className: 'lb-header-bar-wrap' }, h('div', { className: 'lb-header-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-header-row' }, h('div', { className: 'lb-header-pct', style: { color: statusColor(st, pct) } }, pct + '%'), h('div', { className: 'lb-status-badge ' + st, style: st === 'ip' ? { background: pct >= 50 ? 'rgba(39,174,96,.12)' : 'rgba(230,126,34,.12)', color: statusColor(st, pct) } : {} }, stLabel))); el.appendChild(header); if (S.addingTop) { const wrap = h('div', { className: 'lb-add-top-input' }); const inp = h('input', { placeholder: 'Task name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.addingTop = false; createTask(p.id, inp.value.trim()); } if (ev.key === 'Escape') { S.addingTop = false; render(); } } }); wrap.appendChild(inp); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-add-task-btn', onClick: () => { S.addingTop = true; render(); } }, '+ Add task')); } const tree = h('div', {}); p.children.forEach(t => tree.appendChild(renderTaskNode(t, p))); el.appendChild(tree); }
   function renderTaskNode(t, proj) { const st = calcStatus(t); const hasChildren = t.children && t.children.length > 0; const pct = hasChildren ? taskPct(t) : 0; const open = S.open[t.id] || {}; const isArmed = S._pendingDel === t.id; const toggle = h('div', { className: 'lb-expand-toggle' + (hasChildren ? (t.expanded ? ' expanded' : '') : ' hidden'), onClick: ev => { ev.stopPropagation(); if (hasChildren) { t.expanded = !t.expanded; save(); render(); } } }, '▶'); const line = h('div', { className: 'lb-status-line', style: { background: statusColor(st, pct) } }); let checkContent = ''; if (st === 'done') checkContent = '✓'; else if (st === 'ip') checkContent = '◑'; const check = h('div', { className: 'lb-task-check' + (st === 'done' ? ' done' : st === 'ip' ? ' ip' : ''), style: st === 'ip' ? { borderColor: statusColor(st, pct), color: statusColor(st, pct) } : {}, onClick: ev => { ev.stopPropagation(); toggleTask(proj.id, t.id); } }, checkContent); const body = h('div', { className: 'lb-task-body' }, h('div', { className: 'lb-task-title' + (t.done ? ' completed' : '') }, t.title), hasChildren ? h('div', { className: 'lb-task-sub-info' }, h('div', { className: 'lb-mini-bar-wrap' }, h('div', { className: 'lb-mini-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-mini-pct' }, pct + '%')) : null); const ts = t.completedAt ? h('div', { className: 'lb-task-ts' }, fmtFull(t.completedAt)) : null; const notesBadge = t.notes ? h('div', { className: 'badge', style: { background: 'var(--lb-amber)' } }) : null; const linksBadge = t.links && t.links.length ? h('div', { className: 'badge', style: { background: 'var(--lb-blue)' } }) : null; const actions = h('div', { className: 'lb-task-actions' + (isArmed ? ' force-show' : '') }, h('button', { className: 'lb-act-btn', title: 'Rename', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, renaming: !open.renaming, notes: false, links: false, addChild: false }; render(); } }, '✏️'), h('button', { className: 'lb-act-btn', title: 'Notes', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, notes: !open.notes, links: false, addChild: false, renaming: false }; render(); } }, '📝', notesBadge), h('button', { className: 'lb-act-btn', title: 'Links', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, links: !open.links, notes: false, addChild: false, renaming: false }; render(); } }, '🔗', linksBadge), h('button', { className: 'lb-act-btn', title: 'Add subtask', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, addChild: !open.addChild, notes: false, links: false, renaming: false }; render(); } }, '+'), h('button', { className: 'lb-act-btn' + (isArmed ? ' del-armed' : ''), title: 'Delete', onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelTimer); S._pendingDel = null; deleteTask(proj.id, t.id); return; } S._pendingDel = t.id; render(); S._pendingDelTimer = setTimeout(() => { S._pendingDel = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); const row = h('div', { className: 'lb-task-row' }, toggle, line, check, body, ts, actions); const node = h('div', { className: 'lb-task-node' }, row); if (open.renaming) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { value: t.title, onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], renaming: false }; renameTask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], renaming: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => { inp.focus(); inp.select(); }); } if (open.notes) { const panel = h('div', { className: 'lb-notes-panel' }); const autoGrow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }; const ta = h('textarea', { placeholder: 'Add notes…', onInput: ev => { updateNotes(proj.id, t.id, ev.target.value); autoGrow(ev.target); } }); ta.value = t.notes || ''; panel.appendChild(ta); node.appendChild(panel); requestAnimationFrame(() => { autoGrow(ta); ta.focus(); }); } if (open.links) { const panel = h('div', { className: 'lb-links-panel' }); const inputsWrap = h('div', { className: 'lb-link-inputs' }); const nameRow = h('div', { className: 'lb-link-input-row' }); const nameInp = h('input', { placeholder: 'Link name (optional)…' }); nameRow.append(nameInp); const urlRow = h('div', { className: 'lb-link-input-row' }); const urlInp = h('input', { placeholder: 'Paste URL…', onKeydown: ev => { if (ev.key === 'Enter' && urlInp.value.trim()) { addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } } }); const addBtn = h('button', { onClick: () => { if (urlInp.value.trim()) addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } }, 'Add'); urlRow.append(urlInp, addBtn); inputsWrap.append(nameRow, urlRow); panel.appendChild(inputsWrap); (t.links || []).forEach(l => { panel.appendChild(h('div', { className: 'lb-link-item' }, h('span', { className: 'lb-link-badge ' + l.type }, l.type === 'yt' ? 'YT' : l.type === 'gpt' ? 'GPT' : l.type === 'claude' ? 'Claude' : 'Link'), h('a', { className: 'lb-link-url', href: l.url, target: '_blank', rel: 'noopener' }, l.label), h('span', { className: 'lb-link-del', onClick: () => removeLink(proj.id, t.id, l.id) }, '✕'))); }); node.appendChild(panel); requestAnimationFrame(() => nameInp.focus()); } if (open.addChild) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { placeholder: 'Subtask name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], addChild: false }; createSubtask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], addChild: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } if (hasChildren && t.expanded) { const childWrap = h('div', { className: 'lb-task-children' }); t.children.forEach(c => childWrap.appendChild(renderTaskNode(c, proj))); node.appendChild(childWrap); } return node; }
 
   function render() { renderTabs(); renderSidebarContent(); renderSidebarFooter(); renderMain(); }
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { if (S.addingTop) { S.addingTop = false; render(); } if (S._addingProject) { S._addingProject = false; render(); } } });
   render();
+}
+
+// ==================== STORY / WELCOME MODAL ====================
+// Renders content from /content/our-story.md and /content/welcome.md.
+// To edit the text shown to users, edit those .md files and push.
+function _renderSimpleMarkdown(src) {
+  // Minimal renderer: paragraphs split on blank lines, ** for bold, _ for italic, --- for hr.
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  var blocks = String(src).replace(/\r\n/g, '\n').split(/\n{2,}/);
+  return blocks.map(function (b) {
+    var trimmed = b.trim();
+    if (!trimmed) return '';
+    if (/^---+$/.test(trimmed)) return '<hr/>';
+    if (/^#{2,3}\s+/.test(trimmed)) {
+      var level = trimmed.match(/^(#+)/)[1].length;
+      return '<h' + Math.min(level, 3) + '>' + esc(trimmed.replace(/^#+\s+/, '')) + '</h' + Math.min(level, 3) + '>';
+    }
+    var html = esc(trimmed)
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|\W)_([^_]+)_(\W|$)/g, '$1<em>$2</em>$3')
+      .replace(/\n/g, '<br/>');
+    return '<p>' + html + '</p>';
+  }).join('');
+}
+
+async function openStoryModal(which) {
+  var url = which === 'welcome' ? 'content/welcome.md' : 'content/our-story.md';
+  var title = which === 'welcome' ? 'Welcome' : 'Our Story';
+  var modal = document.getElementById('story-modal');
+  var body = document.getElementById('story-modal-body');
+  var titleEl = document.getElementById('story-modal-title');
+  if (!modal) return;
+  titleEl.textContent = title;
+  body.innerHTML = '<p style="opacity:.6">Loading…</p>';
+  modal.style.display = 'flex';
+  try {
+    var res = await fetch(url + '?v=' + Date.now(), { cache: 'no-cache' });
+    var text = await res.text();
+    body.innerHTML = _renderSimpleMarkdown(text);
+  } catch (e) {
+    body.innerHTML = '<p>Could not load this section right now.</p>';
+  }
+}
+function closeStoryModal() {
+  var modal = document.getElementById('story-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var footer = document.getElementById('app-footer');
+  var btn = document.getElementById('footer-our-story');
+  var close = document.getElementById('story-modal-close');
+  var overlay = document.getElementById('story-modal');
+  if (btn) btn.addEventListener('click', function () { openStoryModal('story'); });
+  if (close) close.addEventListener('click', closeStoryModal);
+  if (overlay) overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeStoryModal(); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closeStoryModal(); });
+  // Show footer once auth-ready
+  if (window.DB && DB.onReady) {
+    DB.onReady(function () { if (footer) footer.style.display = 'flex'; maybeShowWelcome(); });
+  }
+});
+
+function maybeShowWelcome() {
+  try {
+    var uid = (window.DB && DB.uid && DB.uid()) || 'anon';
+    var key = 'welcomeShown:' + uid;
+    if (localStorage.getItem(key) === 'done') return;
+    var isNew = localStorage.getItem('firstSignup:' + uid) === 'yes';
+    if (!isNew) return;
+    openStoryModal('welcome');
+    localStorage.setItem(key, 'done');
+    localStorage.removeItem('firstSignup:' + uid);
+  } catch (e) {}
 }

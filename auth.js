@@ -132,6 +132,8 @@
         }
         return;
       }
+      // No profile row yet → this is a brand-new signup. Flag for welcome modal.
+      try { localStorage.setItem('firstSignup:' + user.id, 'yes'); } catch (e) {}
       sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
         if (check.data) username = username + Math.floor(Math.random() * 9000 + 1000);
         sb.from('profiles').insert({ id: user.id, display_name: name, username: username }).then(function () {});
