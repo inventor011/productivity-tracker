@@ -5,35 +5,20 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   window._supabase = sb;
 
-  var mode = 'signup';
+  var overlay  = document.getElementById('auth-overlay');
+  var appNav   = document.getElementById('app-nav');
+  var appWrap  = document.getElementById('app-wrapper');
+  var errorEl  = document.getElementById('auth-error');
+  var navUser  = document.getElementById('nav-user');
+  var navEmail = document.getElementById('nav-email');
 
-  var overlay   = document.getElementById('auth-overlay');
-  var appNav    = document.getElementById('app-nav');
-  var appWrap   = document.getElementById('app-wrapper');
-  var titleEl   = document.getElementById('auth-title');
-  var subEl     = document.getElementById('auth-sub');
-  var errorEl   = document.getElementById('auth-error');
-  var nameIn    = document.getElementById('auth-name');
-  var emailIn   = document.getElementById('auth-email');
-  var passIn    = document.getElementById('auth-password');
-  var passWrap  = document.querySelector('.auth-password-wrap');
-  var eyeBtn    = document.getElementById('auth-eye');
-  var submitBtn = document.getElementById('auth-submit');
-  var switchRow = document.getElementById('auth-switch-row');
-  var navUser   = document.getElementById('nav-user');
-  var navEmail  = document.getElementById('nav-email');
+  // --- Helpers ---
+  function nameToUsername(n) { return n.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); }
 
-  // Hide unused elements from previous flows
-  var vs = document.getElementById('auth-verify-section');
-  if (vs) vs.style.display = 'none';
-  var ur = document.getElementById('auth-username-row');
-  if (ur) ur.style.display = 'none';
-
-  // --- Password toggle ---
-  eyeBtn.addEventListener('click', function () {
-    if (passIn.type === 'text') { passIn.type = 'password'; eyeBtn.textContent = 'Show'; }
-    else { passIn.type = 'text'; eyeBtn.textContent = 'Hide'; }
-  });
+  function setError(msg) {
+    errorEl.textContent = msg;
+    errorEl.style.display = msg ? 'block' : 'none';
+  }
 
   // --- Google Sign-In ---
   document.getElementById('auth-google-btn').addEventListener('click', async function () {
@@ -49,36 +34,7 @@
     }
   });
 
-  // --- Helpers ---
-  function nameToUsername(n) { return n.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); }
-
-  function setError(msg) {
-    errorEl.textContent = msg;
-    errorEl.style.display = msg ? 'block' : 'none';
-  }
-
-  function setMode(m) {
-    mode = m;
-    setError('');
-    submitBtn.disabled = false;
-    nameIn.style.display = m === 'signup' ? '' : 'none';
-
-    if (m === 'signup') {
-      titleEl.textContent = 'Welcome';
-      subEl.textContent = 'Start tracking your productivity';
-      submitBtn.textContent = 'Create Account';
-      document.getElementById('auth-switch-link').textContent = 'Sign in instead';
-      document.getElementById('auth-switch-label').textContent = 'Already have an account? ';
-    } else {
-      titleEl.textContent = 'Welcome back';
-      subEl.textContent = 'Sign in to access your tracker';
-      submitBtn.textContent = 'Sign In';
-      document.getElementById('auth-switch-link').textContent = 'Sign up';
-      document.getElementById('auth-switch-label').textContent = "Don't have an account? ";
-    }
-  }
-
-  // --- Show app / auth ---
+  // --- Welcome modal (shown once on first signup) ---
   function showWelcomeModal() {
     var modal = document.getElementById('welcome-modal');
     if (!modal) return;
@@ -91,6 +47,7 @@
     }, { once: true });
   }
 
+  // --- Show app / auth ---
   function showApp(user) {
     overlay.style.display = 'none';
     appNav.style.display = 'flex';
@@ -113,7 +70,6 @@
       navAvatar.style.display = '';
     }
 
-    // Show name immediately from Google metadata, then refine from profile
     var quickName = getDisplayName(user);
     if (navEmail) navEmail.textContent = quickName;
 
@@ -134,7 +90,6 @@
   // --- Profile creation ---
   function getDisplayName(user) {
     var meta = user.user_metadata || {};
-    // Google sends full_name/name; email signup sends display_name
     return meta.full_name || meta.name || meta.display_name || user.email.split('@')[0];
   }
 
@@ -145,14 +100,13 @@
 
     sb.from('profiles').select('id, display_name').eq('id', user.id).maybeSingle().then(function (res) {
       if (res.data) {
-        // Update name if it was stored as the email prefix but Google has the real name
         var stored = res.data.display_name;
         if (stored && stored === user.email.split('@')[0] && name !== stored) {
           sb.from('profiles').update({ display_name: name }).eq('id', user.id).then(function () {});
         }
         return;
       }
-      // No profile row yet → this is a brand-new signup. Flag for welcome modal.
+      // No profile row yet → brand-new signup. Flag for welcome modal.
       try { localStorage.setItem('firstSignup:' + user.id, 'yes'); } catch (e) {}
       sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
         if (check.data) username = username + Math.floor(Math.random() * 9000 + 1000);
@@ -161,82 +115,7 @@
     });
   }
 
-  // --- Email/Password Submit ---
-  async function handleSubmit() {
-    setError('');
-
-    if (mode === 'signup') {
-      var name = nameIn.value.trim();
-      var email = emailIn.value.trim();
-      var password = passIn.value;
-
-      if (!name) { setError('Please enter your name.'); return; }
-      if (!email) { setError('Please enter your email.'); return; }
-      if (!password || password.length < 6) { setError('Password must be at least 6 characters.'); return; }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Creating account…';
-
-      try {
-        var result = await sb.auth.signUp({
-          email: email,
-          password: password,
-          options: { data: { display_name: name, username: nameToUsername(name) } }
-        });
-
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-
-        if (result.error) { setError(result.error.message); return; }
-
-        if (result.data && result.data.user && result.data.user.identities && result.data.user.identities.length === 0) {
-          setError('This email is already registered. Try signing in.');
-          return;
-        }
-
-        if (result.data && result.data.session) {
-          return; // onAuthStateChange handles the rest
-        }
-
-        setError('Account created! But email confirmation is enabled. Please disable it in Supabase or use Google Sign-In.');
-
-      } catch (e) {
-        setError('Something went wrong: ' + (e.message || 'Please try again.'));
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
-      }
-
-    } else {
-      var email = emailIn.value.trim();
-      var password = passIn.value;
-      if (!email) { setError('Please enter your email.'); return; }
-      if (!password) { setError('Please enter your password.'); return; }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Signing in…';
-
-      try {
-        var result = await sb.auth.signInWithPassword({ email: email, password: password });
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-        if (result.error) { setError(result.error.message); return; }
-      } catch (e) {
-        setError('Something went wrong: ' + (e.message || 'Please try again.'));
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Sign In';
-      }
-    }
-  }
-
   // --- Events ---
-  setMode('signup'); // default landing page is sign up
-  document.getElementById('auth-switch-link').addEventListener('click', function () {
-    setMode(mode === 'signin' ? 'signup' : 'signin');
-  });
-  submitBtn.addEventListener('click', handleSubmit);
-  passIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') handleSubmit(); });
-  emailIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') passIn.focus(); });
-  nameIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') emailIn.focus(); });
   document.getElementById('nav-logout').addEventListener('click', function () { sb.auth.signOut(); });
 
   // --- Auth state ---
