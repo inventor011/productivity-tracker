@@ -5,7 +5,7 @@
   var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   window._supabase = sb;
 
-  var mode = 'signin';
+  var mode = 'signup';
 
   var overlay   = document.getElementById('auth-overlay');
   var appNav    = document.getElementById('app-nav');
@@ -229,6 +229,7 @@
   }
 
   // --- Events ---
+  setMode('signup'); // default landing page is sign up
   document.getElementById('auth-switch-link').addEventListener('click', function () {
     setMode(mode === 'signin' ? 'signup' : 'signin');
   });
