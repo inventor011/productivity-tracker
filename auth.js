@@ -64,7 +64,7 @@
     nameIn.style.display = m === 'signup' ? '' : 'none';
 
     if (m === 'signup') {
-      titleEl.textContent = 'Create account';
+      titleEl.textContent = 'Welcome';
       subEl.textContent = 'Start tracking your productivity';
       submitBtn.textContent = 'Create Account';
       document.getElementById('auth-switch-link').textContent = 'Sign in instead';
