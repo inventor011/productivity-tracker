@@ -12,6 +12,8 @@
   var navUser  = document.getElementById('nav-user');
   var navEmail = document.getElementById('nav-email');
 
+  var mode = 'signup';
+
   // --- Helpers ---
   function nameToUsername(n) { return n.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30); }
 
@@ -19,6 +21,28 @@
     errorEl.textContent = msg;
     errorEl.style.display = msg ? 'block' : 'none';
   }
+
+  function setMode(m) {
+    mode = m;
+    setError('');
+    if (m === 'signup') {
+      document.getElementById('auth-title').textContent = 'Welcome';
+      document.getElementById('auth-sub').textContent = 'Start tracking your productivity';
+      document.getElementById('auth-google-label').textContent = 'Sign up with Google';
+      document.getElementById('auth-switch-label').textContent = 'Already have an account?';
+      document.getElementById('auth-switch-link').textContent = 'Sign in instead';
+    } else {
+      document.getElementById('auth-title').textContent = 'Welcome back';
+      document.getElementById('auth-sub').textContent = 'Sign in to continue tracking';
+      document.getElementById('auth-google-label').textContent = 'Sign in with Google';
+      document.getElementById('auth-switch-label').textContent = "Don't have an account?";
+      document.getElementById('auth-switch-link').textContent = 'Sign up';
+    }
+  }
+
+  document.getElementById('auth-switch-link').addEventListener('click', function () {
+    setMode(mode === 'signin' ? 'signup' : 'signin');
+  });
 
   // --- Google Sign-In ---
   document.getElementById('auth-google-btn').addEventListener('click', async function () {

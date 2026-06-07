@@ -547,7 +547,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .auth-card{width:100%;max-width:420px;padding:48px 40px;background:#fdf6e7;border:1px solid rgba(217,119,87,.25);border-top:3px solid #d97757;border-radius:14px;box-shadow:0 24px 60px rgba(60,30,15,.18);margin:16px}
 .auth-brand{font-family:'Instrument Serif','Playfair Display',serif;font-weight:600;font-size:14px;letter-spacing:.06em;color:#b76a4d;text-transform:uppercase;margin-bottom:30px}
 .auth-title{font-family:'Fraunces','Tiempos','Playfair Display',Georgia,serif;font-size:38px;font-weight:500;color:#1d1410;margin-bottom:10px;letter-spacing:-.02em;line-height:1.05;font-variation-settings:"opsz" 96}
-.auth-sub{font-size:14px;color:#7a604f;margin-bottom:28px;letter-spacing:.01em;line-height:1.55;font-family:'Instrument Serif','Tiempos',Georgia,serif}
+.auth-sub{font-size:17px;color:#7a604f;margin-bottom:28px;letter-spacing:.01em;line-height:1.55;font-family:'Instrument Serif','Tiempos',Georgia,serif}
 .auth-error{background:rgba(184,64,64,.08);border:1px solid rgba(184,64,64,.4);color:#a93c3c;font-size:13px;padding:10px 14px;margin-bottom:16px;letter-spacing:.01em;border-radius:8px;font-family:'Instrument Serif',Georgia,serif}
 .auth-input{display:block;width:100%;background:#fff;border:1px solid #e1cdb0;color:#2b1d14;font-family:'Instrument Serif','Tiempos',Georgia,serif;font-size:15px;padding:13px 16px;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:12px;border-radius:8px;box-sizing:border-box}
 .auth-input:focus{border-color:#d97757;box-shadow:0 0 0 3px rgba(217,119,87,.18)}
@@ -569,8 +569,10 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:rgba(217,119,87,.3)}
 .auth-code-input{text-align:center;font-size:26px!important;letter-spacing:8px;font-weight:700}
 .auth-resend-row{margin-top:14px;text-align:center;font-size:13px;color:#7a604f;font-family:'Instrument Serif',Georgia,serif}
-.auth-switch-row{margin-top:20px;text-align:center;font-size:14px;color:#7a604f;font-family:'Instrument Serif',Georgia,serif}
-.auth-switch-link{color:#d97757;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-weight:500}
+.auth-switch-row{margin-top:20px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:14px;color:#7a604f;font-family:'Instrument Serif',Georgia,serif}
+.auth-switch-label{display:block}
+.auth-switch-btn{background:transparent;border:1.5px solid #d97757;color:#d97757;font-family:'Instrument Serif','Tiempos',Georgia,serif;font-size:14px;font-weight:600;letter-spacing:.03em;padding:9px 24px;border-radius:8px;cursor:pointer;transition:background .2s,color .2s,transform .1s}
+.auth-switch-btn:hover{background:#d97757;color:#fff;transform:translateY(-1px)}
 
 /* NAV USER */
 .nav-user{margin-left:auto;display:flex;align-items:center;gap:10px;padding-left:12px;border-left:1px solid #222}
