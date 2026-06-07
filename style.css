@@ -614,3 +614,44 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .story-modal-body h2,.story-modal-body h3{font-weight:700;margin:24px 0 10px;color:#2b1d14}
 .story-modal-body hr{border:none;border-top:1px solid rgba(217,119,87,.35);margin:22px 0}
 @media(max-width:600px){.story-modal-card{padding:28px 22px 24px}.story-modal-title{font-size:26px}.story-modal-body{font-size:15.5px}}
+
+/* ===== MOBILE NAV + LAYOUT ===== */
+@media(max-width:640px){
+  #app-nav{height:auto;flex-wrap:wrap;padding:6px 8px;gap:0}
+  .nav-brand{width:100%;margin:0 0 4px;font-size:11px;text-align:center}
+  .nav-tab{padding:5px 8px;font-size:9px;gap:4px;letter-spacing:.04em;flex:1;justify-content:center;min-width:0}
+  .nav-tab .nav-icon{font-size:12px}
+  .nav-user{width:100%;margin:4px 0 0;padding:5px 0 2px;border-left:none;border-top:1px solid #222;justify-content:center;gap:8px}
+  .nav-email{font-size:10px;max-width:100px}
+  .nav-logout{font-size:9px;padding:3px 8px}
+  #app-wrapper{top:auto;position:relative;min-height:calc(100vh - 120px);height:auto}
+  html,body{overflow:auto;height:auto}
+  .tool-tab{position:relative;inset:auto;overflow:visible;min-height:calc(100vh - 120px)}
+  .tool-tab.active{display:block}
+
+  /* Auth card mobile */
+  .auth-card{padding:28px 20px 24px}
+  .auth-title{font-size:30px}
+  .auth-google-btn{font-size:13px;padding:12px}
+
+  /* Tracker mobile spacing */
+  #tab-tracker header{padding:12px 10px 8px}
+  #tab-tracker .logo{font-size:1.1rem}
+  #tab-tracker .week-pill{font-size:.65rem;padding:3px 8px}
+  #tab-tracker .toggle-lbl{font-size:.65rem}
+  #tab-tracker .week-nav{padding:0 10px}
+  #tab-tracker .week-nav h1{font-size:1.4rem}
+  #tab-tracker .score-grid{padding:0 10px;gap:10px}
+  #tab-tracker .manual-row{margin:12px 10px;padding:14px;flex-direction:column;gap:8px;align-items:stretch}
+  #tab-tracker .manual-row label{font-size:.75rem}
+  #tab-tracker .manual-row label span{font-size:.65rem}
+  #tab-tracker .manual-row .rating-input{width:100%}
+  #tab-tracker .manual-row .save-manual-btn,
+  #tab-tracker .manual-row .clear-manual-btn{padding:8px;font-size:.7rem}
+  #tab-tracker .day-tabs{padding:0 6px;gap:3px}
+  #tab-tracker .day-panel{margin:0 8px}
+  #tab-tracker .chart-section{margin:16px 8px}
+  #tab-tracker .report-section{margin:16px 8px}
+  #tab-tracker .sec-title{padding:0 10px}
+  #tab-tracker .weeks-list{padding:0 8px}
+}

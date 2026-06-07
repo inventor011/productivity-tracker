@@ -72,19 +72,15 @@
   }
 
   // --- Show app / auth ---
-  function showApp(user) {
+  function showApp(user, isNewUser) {
     overlay.style.display = 'none';
     appNav.style.display = 'flex';
     appWrap.style.display = 'block';
     if (navUser) navUser.style.display = 'flex';
 
-    try {
-      var flagKey = 'firstSignup:' + user.id;
-      if (localStorage.getItem(flagKey) === 'yes') {
-        localStorage.removeItem(flagKey);
-        setTimeout(showWelcomeModal, 600);
-      }
-    } catch (e) {}
+    if (isNewUser) {
+      setTimeout(showWelcomeModal, 600);
+    }
 
     var meta = user.user_metadata || {};
     var avatarUrl = meta.avatar_url || meta.picture || '';
@@ -111,7 +107,7 @@
     if (navUser) navUser.style.display = 'none';
   }
 
-  // --- Profile creation ---
+  // --- Profile creation (returns promise that resolves to true if brand-new user) ---
   function getDisplayName(user) {
     var meta = user.user_metadata || {};
     return meta.full_name || meta.name || meta.display_name || user.email.split('@')[0];
@@ -122,20 +118,30 @@
     var meta = user.user_metadata || {};
     var username = meta.username || nameToUsername(name);
 
-    sb.from('profiles').select('id, display_name').eq('id', user.id).maybeSingle().then(function (res) {
+    return sb.from('profiles').select('id, display_name').eq('id', user.id).maybeSingle().then(function (res) {
       if (res.data) {
         var stored = res.data.display_name;
         if (stored && stored === user.email.split('@')[0] && name !== stored) {
           sb.from('profiles').update({ display_name: name }).eq('id', user.id).then(function () {});
         }
-        return;
+        return false; // existing user
       }
-      // No profile row yet → brand-new signup. Flag for welcome modal.
-      try { localStorage.setItem('firstSignup:' + user.id, 'yes'); } catch (e) {}
-      sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
+      // No profile row yet → brand-new signup
+      return sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
         if (check.data) username = username + Math.floor(Math.random() * 9000 + 1000);
-        sb.from('profiles').insert({ id: user.id, display_name: name, username: username }).then(function () {});
+        return sb.from('profiles').insert({ id: user.id, display_name: name, username: username }).then(function () {
+          return true; // new user
+        });
       });
+    });
+  }
+
+  // --- Boot user into app (waits for profile check, then shows welcome if new) ---
+  function bootUser(user) {
+    ensureProfile(user).then(function (isNew) {
+      showApp(user, isNew);
+    }).catch(function () {
+      showApp(user, false);
     });
   }
 
@@ -144,13 +150,13 @@
 
   // --- Auth state ---
   sb.auth.onAuthStateChange(function (_event, session) {
-    if (session) { ensureProfile(session.user); showApp(session.user); }
+    if (session) { bootUser(session.user); }
     else { showAuth(); }
   });
 
   sb.auth.getSession().then(function (response) {
     var session = response.data.session;
-    if (session) { ensureProfile(session.user); showApp(session.user); }
+    if (session) { bootUser(session.user); }
     else { showAuth(); }
   });
 })();
