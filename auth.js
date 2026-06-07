@@ -79,11 +79,31 @@
   }
 
   // --- Show app / auth ---
+  function showWelcomeModal() {
+    var modal = document.getElementById('welcome-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    document.getElementById('welcome-modal-close').addEventListener('click', function () {
+      modal.style.display = 'none';
+    }, { once: true });
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) modal.style.display = 'none';
+    }, { once: true });
+  }
+
   function showApp(user) {
     overlay.style.display = 'none';
     appNav.style.display = 'flex';
     appWrap.style.display = 'block';
     if (navUser) navUser.style.display = 'flex';
+
+    try {
+      var flagKey = 'firstSignup:' + user.id;
+      if (localStorage.getItem(flagKey) === 'yes') {
+        localStorage.removeItem(flagKey);
+        setTimeout(showWelcomeModal, 600);
+      }
+    } catch (e) {}
 
     var meta = user.user_metadata || {};
     var avatarUrl = meta.avatar_url || meta.picture || '';
