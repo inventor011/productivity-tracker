@@ -31,6 +31,23 @@
   <button class="nav-tab" data-tab="ranker" onclick="switchTab('ranker')"><span class="nav-icon">✦</span> Ranker</button>
   <button class="nav-tab" data-tab="streak" onclick="switchTab('streak')"><span class="nav-icon">🔥</span> Streak</button>
   <button class="nav-tab" data-tab="logbook" onclick="switchTab('logbook')"><span class="nav-icon">📋</span> Logbook</button>
+  <button type="button" id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu">☰</button>
+  <div id="mobile-menu-drawer" class="mobile-menu-drawer">
+    <div class="mobile-menu-header">
+      <span class="nav-brand" style="margin:0">⬛ DASH</span>
+      <button type="button" id="mobile-menu-close" class="mobile-menu-close" aria-label="Close">✕</button>
+    </div>
+    <div class="mobile-menu-items">
+      <button class="mobile-menu-item active" data-tab="tracker" onclick="switchTab('tracker');closeMobileMenu()"><span class="nav-icon">📅</span> Tracker</button>
+      <button class="mobile-menu-item" data-tab="todo" onclick="switchTab('todo');closeMobileMenu()"><span class="nav-icon">☑</span> To-Do</button>
+      <button class="mobile-menu-item" data-tab="progress" onclick="switchTab('progress');closeMobileMenu()"><span class="nav-icon">📈</span> Progress</button>
+      <button class="mobile-menu-item" data-tab="ranker" onclick="switchTab('ranker');closeMobileMenu()"><span class="nav-icon">✦</span> Ranker</button>
+      <button class="mobile-menu-item" data-tab="streak" onclick="switchTab('streak');closeMobileMenu()"><span class="nav-icon">🔥</span> Streak</button>
+      <button class="mobile-menu-item" data-tab="logbook" onclick="switchTab('logbook');closeMobileMenu()"><span class="nav-icon">📋</span> Logbook</button>
+    </div>
+    <div class="mobile-menu-footer" id="mobile-menu-user"></div>
+  </div>
+  <div id="mobile-menu-backdrop" class="mobile-menu-backdrop"></div>
   <div class="nav-user" id="nav-user" style="display:none">
     <img id="nav-avatar" class="nav-avatar" src="" alt="" style="display:none"/>
     <span id="nav-email" class="nav-email"></span>

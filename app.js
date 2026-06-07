@@ -5,6 +5,36 @@ function ymd(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// ==================== MOBILE MENU ====================
+function closeMobileMenu() {
+  var d = document.getElementById('mobile-menu-drawer');
+  var b = document.getElementById('mobile-menu-backdrop');
+  if (d) d.classList.remove('open');
+  if (b) b.classList.remove('open');
+}
+(function () {
+  var btn = document.getElementById('mobile-menu-btn');
+  var close = document.getElementById('mobile-menu-close');
+  var backdrop = document.getElementById('mobile-menu-backdrop');
+  if (btn) btn.addEventListener('click', function () {
+    document.getElementById('mobile-menu-drawer').classList.add('open');
+    document.getElementById('mobile-menu-backdrop').classList.add('open');
+    // sync user info into drawer
+    var email = document.getElementById('nav-email');
+    var avatar = document.getElementById('nav-avatar');
+    var footer = document.getElementById('mobile-menu-user');
+    if (footer && email) {
+      var html = '';
+      if (avatar && avatar.src && avatar.style.display !== 'none') html += '<img src="' + avatar.src + '" class="nav-avatar" style="width:32px;height:32px"/>';
+      html += '<span style="font-size:13px;color:#aaa">' + email.textContent + '</span>';
+      html += '<button onclick="document.getElementById(\'nav-logout\').click();closeMobileMenu()" style="margin-top:8px;width:100%;padding:10px;background:transparent;border:1px solid #333;color:#e07070;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;cursor:pointer">Sign Out</button>';
+      footer.innerHTML = html;
+    }
+  });
+  if (close) close.addEventListener('click', closeMobileMenu);
+  if (backdrop) backdrop.addEventListener('click', closeMobileMenu);
+})();
+
 // ==================== TAB SWITCHING ====================
 function switchTab(name, persist) {
   const panel = document.getElementById('tab-' + name);
@@ -14,6 +44,10 @@ function switchTab(name, persist) {
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   panel.classList.add('active');
   button.classList.add('active');
+  // sync mobile menu active state
+  document.querySelectorAll('.mobile-menu-item').forEach(function (mi) {
+    mi.classList.toggle('active', mi.dataset.tab === name);
+  });
   if (persist !== false) DB.savePrefs({ active_tab: name, tracker_theme: document.getElementById('tab-tracker').getAttribute('data-theme') || 'light' });
 }
 
@@ -460,7 +494,7 @@ async function initTracker() {
     const dayTasks = data.days[selDs] || [];
     const dayAvgVal = dayTasks.length ? (dayTasks.reduce((s, t) => s + t.rating, 0) / dayTasks.length).toFixed(2) : null;
     const panel = document.getElementById('dayPanel');
-    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="task-list" id="taskListEl"></div>';
+    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row add-step-name" id="addStepName"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="add-row add-step-rating" id="addStepRating" style="display:none"><div class="step-rating-label" id="stepRatingLabel"></div><input type="number" id="taskRatingIn2" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskDoneBtn">Done</button><button class="add-btn step-cancel-btn" id="addTaskCancelBtn">Cancel</button></div><div class="task-list" id="taskListEl"></div>';
     const taskListEl = document.getElementById('taskListEl');
     if (!dayTasks.length) { taskListEl.innerHTML = '<div class="empty-day"><div class="emo">📝</div>No tasks for this day yet.</div>'; }
     else {
@@ -484,9 +518,45 @@ async function initTracker() {
         });
       });
     }
-    document.getElementById('addTaskBtn').addEventListener('click', addTask);
-    document.getElementById('taskNameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { var r = document.getElementById('taskRatingIn'); if (!r.value) { r.focus(); } else { addTask(); } } });
+    var isMobile = window.innerWidth <= 640;
+    document.getElementById('addTaskBtn').addEventListener('click', isMobile ? mobileStepNext : addTask);
+    document.getElementById('taskNameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { if (isMobile) { mobileStepNext(); } else { var r = document.getElementById('taskRatingIn'); if (!r.value) { r.focus(); } else { addTask(); } } } });
     document.getElementById('taskRatingIn').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
+
+    function mobileStepNext() {
+      var nameEl = document.getElementById('taskNameIn');
+      var name = nameEl.value.trim();
+      if (!name) { nameEl.style.borderColor = 'var(--red)'; setTimeout(function(){ nameEl.style.borderColor = ''; }, 900); return; }
+      document.getElementById('stepRatingLabel').textContent = 'Rate: ' + name;
+      document.getElementById('addStepName').style.display = 'none';
+      document.getElementById('addStepRating').style.display = 'flex';
+      var r2 = document.getElementById('taskRatingIn2');
+      r2.value = ''; r2.focus();
+    }
+    var doneBtn = document.getElementById('addTaskDoneBtn');
+    if (doneBtn) doneBtn.addEventListener('click', mobileStepDone);
+    var cancelBtn = document.getElementById('addTaskCancelBtn');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () {
+      document.getElementById('addStepRating').style.display = 'none';
+      document.getElementById('addStepName').style.display = 'flex';
+    });
+    var r2In = document.getElementById('taskRatingIn2');
+    if (r2In) r2In.addEventListener('keydown', function (e) { if (e.key === 'Enter') mobileStepDone(); });
+
+    async function mobileStepDone() {
+      var nameEl = document.getElementById('taskNameIn');
+      var ratingEl = document.getElementById('taskRatingIn2');
+      var name = nameEl.value.trim(); var rating = parseFloat(ratingEl.value);
+      if (isNaN(rating)) { ratingEl.style.borderColor = 'var(--red)'; setTimeout(function(){ ratingEl.style.borderColor = ''; }, 900); return; }
+      rating = Math.min(2, Math.max(0, rating));
+      const d2 = await DB.loadWeek(mondayKey); if (!d2.days[selDs]) d2.days[selDs] = [];
+      d2.days[selDs].push({ name, rating }); await DB.saveWeek(mondayKey, d2);
+      nameEl.value = ''; ratingEl.value = '';
+      document.getElementById('addStepRating').style.display = 'none';
+      document.getElementById('addStepName').style.display = 'flex';
+      render();
+    }
+
     async function addTask() {
       const nameEl = document.getElementById('taskNameIn'), ratingEl = document.getElementById('taskRatingIn');
       const name = nameEl.value.trim(); var rating = parseFloat(ratingEl.value);
