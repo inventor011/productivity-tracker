@@ -272,9 +272,11 @@ async function initProgress() {
     if (!ch) return;
     const avg = rows.length ? rows.map(r => r.pct).filter(v => !isNaN(v)) : [];
     const avgVal = avg.length ? avg.reduce((a, b) => a + b, 0) / avg.length : null;
-    const passed = avgVal != null && avgVal >= passingPercent;
+    // New users (< 2 weeks data): always green. After that: green/red based on passing %
+    const isNewUser = avg.length < 2;
+    const passed = isNewUser ? true : (avgVal != null && avgVal >= passingPercent);
     const themeColor = passed ? PASS_COLOR : FAIL_COLOR;
-    const label = avgVal == null ? 'Passing target: ' + passingPercent + '%' : (passed ? 'Passing' : 'Below passing') + ' - target ' + passingPercent + '%';
+    const label = isNewUser ? 'Add more weeks to see pass/fail status' : (avgVal == null ? 'Passing target: ' + passingPercent + '%' : (passed ? 'Passing' : 'Below passing') + ' - target ' + passingPercent + '%');
     const ds = ch.data.datasets[0];
     if (chartType === 'line') {
       ds.borderColor = themeColor;
@@ -781,20 +783,52 @@ async function initRanker() {
   let saved = await DB.loadRanker();
   let questions = saved.questions;
   let apiKey = saved.apiKey;
+  let customPrompt = saved.customPrompt || '';
   let schedulerTimer = null;
 
-  if (apiKey) {
-    document.getElementById('api-key-input').value = apiKey;
-    document.getElementById('key-status').textContent = 'Key saved ✓';
-    document.getElementById('key-status').classList.add('ok');
+  // --- API Key UI management ---
+  function showKeySavedUI() {
+    document.getElementById('api-key-input-wrap').style.display = 'none';
+    document.getElementById('api-key-saved').style.display = 'flex';
   }
+  function showKeyInputUI() {
+    document.getElementById('api-key-saved').style.display = 'none';
+    var wrap = document.getElementById('api-key-input-wrap');
+    wrap.style.display = 'flex';
+    var inp = document.getElementById('api-key-input');
+    inp.value = '';
+    inp.focus();
+  }
+  window.rankerShowKeyInput = showKeyInputUI;
+
+  if (apiKey) {
+    showKeySavedUI();
+  }
+
+  // Load custom prompt
+  var promptInput = document.getElementById('ranking-prompt-input');
+  if (promptInput && customPrompt) promptInput.value = customPrompt;
+
+  window.rankerSavePrompt = async function (val) {
+    customPrompt = val || '';
+    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+  };
 
   window.rankerSaveApiKey = async function () {
     const val = document.getElementById('api-key-input').value.trim();
     if (!val) { rankerShowToast('Enter a valid API key', 'error'); return; }
+    // Validate: Gemini API keys start with "AIza"
+    if (!val.startsWith('AIza')) {
+      rankerShowToast('Invalid key — Gemini API keys start with "AIza"', 'error');
+      return;
+    }
+    if (val.length < 30) {
+      rankerShowToast('Key looks too short — check your API key', 'error');
+      return;
+    }
     apiKey = val;
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
-    const s = document.getElementById('key-status'); s.textContent = 'Key saved ✓'; s.classList.add('ok');
+    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+    showKeySavedUI();
     rankerShowToast('API key saved', 'success');
   };
 
@@ -803,13 +837,13 @@ async function initRanker() {
     if (!text) { rankerShowToast('Question cannot be empty', 'error'); return; }
     questions.push({ id: Date.now(), text, score: null, reason: null, rank: null, addedAt: new Date().toISOString() });
     inp.value = '';
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
+    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     rankerRender(); rankerShowToast('Question added', 'success');
   };
 
   window.rankerDeleteQuestion = async function (id) {
     questions = questions.filter(q => q.id !== id);
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
+    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     rankerRender();
   };
 
@@ -817,7 +851,7 @@ async function initRanker() {
     if (questions.length === 0) return;
     if (!confirm('Delete all questions and scores?')) return;
     questions = [];
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
+    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     rankerRender(); rankerShowToast('All questions cleared', 'info');
   };
 
@@ -856,7 +890,8 @@ async function initRanker() {
     const btn = document.getElementById('run-btn'); btn.disabled = true; btn.classList.add('running');
     rankerLog('Starting evaluation with Gemini 2.5 Flash…', 'accent');
     const list = questions.map((q, i) => (i + 1) + '. [ID:' + q.id + '] ' + q.text).join('\n');
-    const prompt = 'You are an expert at evaluating the importance and depth of questions.\n\nBelow is a list of questions. Score each 1-10 (10=most important). Spread scores thoughtfully.\n\nQuestions:\n' + list + '\n\nRespond ONLY with a valid JSON array. No markdown.\nFormat:\n[{"id":<id>,"score":<1-10>,"reason":"<one concise sentence>"},...]';
+    var customInstructions = customPrompt ? '\n\nUser\'s custom ranking instructions:\n' + customPrompt + '\n' : '';
+    const prompt = 'You are an expert at evaluating the importance and depth of questions.\n\nBelow is a list of questions. Score each 1-10 (10=most important). Spread scores thoughtfully.' + customInstructions + '\n\nQuestions:\n' + list + '\n\nRespond ONLY with a valid JSON array. No markdown.\nFormat:\n[{"id":<id>,"score":<1-10>,"reason":"<one concise sentence>"},...]';
     try {
       const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.3, responseMimeType: 'application/json' } }) });
       if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err?.error?.message || 'HTTP ' + res.status); }
@@ -869,7 +904,7 @@ async function initRanker() {
       questions.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
       questions.forEach((q, i) => { q.rank = q.score !== null ? i + 1 : null; });
       saved.lastRun = new Date().toDateString();
-      await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
+      await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
       rankerLog('✓ Evaluation complete. ' + questions.length + ' questions scored.', 'ok');
       rankerShowToast('Questions ranked successfully', 'success');
       rankerRender();
@@ -1098,12 +1133,45 @@ async function initLogbook() {
   function logDesc(e) { const b = s => h('b', {}, s); switch (e.action) { case 'proj_created': return [b(e.entity), ' created']; case 'proj_deleted': return [b(e.entity), ' deleted']; case 'proj_done': return [b(e.entity), ' completed']; case 'proj_reopen': return [b(e.entity), ' reopened']; case 'task_created': return ['Task ', b(e.entity), ' added to ', b(e.proj)]; case 'subtask_added': return ['Subtask ', b(e.entity), ' added under ', b(e.extra), ' in ', b(e.proj)]; case 'task_done': return ['Task ', b(e.entity), ' completed in ', b(e.proj)]; case 'task_reopen': return ['Task ', b(e.entity), ' reopened in ', b(e.proj)]; case 'task_deleted': return ['Task ', b(e.entity), ' deleted from ', b(e.proj)]; case 'link_added': return ['Link added to ', b(e.entity), ' in ', b(e.proj)]; default: return [e.action]; } }
 
   function renderTabs() { const el = document.getElementById('lb-tabs'); el.innerHTML = ''; ['active', 'done', 'log'].forEach(t => { const label = t === 'active' ? 'Active' : t === 'done' ? 'Done' : 'Log'; el.appendChild(h('div', { className: 'lb-tab' + (S.tab === t ? ' active' : ''), onClick: () => { S.tab = t; render(); } }, label)); }); }
-  function renderSidebarContent() { const el = document.getElementById('lb-sidebar-content'); el.innerHTML = ''; if (S.tab === 'active') { const active = S.projects.filter(p => projPct(p) < 100); if (!active.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No active projects')); return; } active.forEach(p => { const pct = projPct(p); const st = projStatus(p); const isArmed = S._pendingDelProj === p.id; const row = h('div', { className: 'lb-proj-row' + (S.activeId === p.id ? ' selected' : ''), onClick: () => { S.activeId = p.id; save(); render(); } }, h('div', { className: 'lb-proj-dot', style: { background: statusColor(st, pct) } }), h('div', { className: 'lb-proj-info' }, h('div', { className: 'lb-proj-title' }, p.title), h('div', { className: 'lb-proj-bar-wrap' }, h('div', { className: 'lb-proj-bar', style: { width: pct + '%', background: statusColor(st, pct) } }))), h('div', { className: 'lb-proj-pct' }, pct + '%'), h('div', { className: 'lb-proj-del' + (isArmed ? ' armed' : ''), onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelProjTimer); S._pendingDelProj = null; deleteProject(p.id); return; } S._pendingDelProj = p.id; render(); S._pendingDelProjTimer = setTimeout(() => { S._pendingDelProj = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); el.appendChild(row); }); } else if (S.tab === 'done') { const done = S.projects.filter(p => projPct(p) >= 100); if (!done.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No completed projects')); return; } done.forEach(p => { el.appendChild(h('div', { className: 'lb-done-row', style: { cursor: 'pointer' }, onClick: () => { S.activeId = p.id; S.tab = 'active'; save(); render(); } }, h('div', { className: 'lb-done-title' }, p.title), h('div', { className: 'lb-done-ts' }, p.completedAt ? fmtFull(p.completedAt) : ''))); }); } else { if (!S.log.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No activity yet')); return; } S.log.forEach(e => { el.appendChild(h('div', { className: 'lb-log-entry' }, h('div', { className: 'lb-log-dot', style: { background: logColor(e.action) } }), h('div', { className: 'lb-log-body' }, h('div', { className: 'lb-log-desc' }, ...logDesc(e)), h('div', { className: 'lb-log-ts' }, fmtFull(e.ts))))); }); } }
+  function renderSidebarContent() { const el = document.getElementById('lb-sidebar-content'); el.innerHTML = ''; if (S.tab === 'active') { const active = S.projects.filter(p => projPct(p) < 100); if (!active.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No active projects')); return; } active.forEach(p => { const pct = projPct(p); const st = projStatus(p); const isArmed = S._pendingDelProj === p.id; const row = h('div', { className: 'lb-proj-row' + (S.activeId === p.id ? ' selected' : ''), onClick: () => { S.activeId = p.id; if (window.innerWidth <= 640) S._mobileProjectsOpen = false; save(); render(); } }, h('div', { className: 'lb-proj-dot', style: { background: statusColor(st, pct) } }), h('div', { className: 'lb-proj-info' }, h('div', { className: 'lb-proj-title' }, p.title), h('div', { className: 'lb-proj-bar-wrap' }, h('div', { className: 'lb-proj-bar', style: { width: pct + '%', background: statusColor(st, pct) } }))), h('div', { className: 'lb-proj-pct' }, pct + '%'), h('div', { className: 'lb-proj-del' + (isArmed ? ' armed' : ''), onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelProjTimer); S._pendingDelProj = null; deleteProject(p.id); return; } S._pendingDelProj = p.id; render(); S._pendingDelProjTimer = setTimeout(() => { S._pendingDelProj = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); el.appendChild(row); }); } else if (S.tab === 'done') { const done = S.projects.filter(p => projPct(p) >= 100); if (!done.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No completed projects')); return; } done.forEach(p => { el.appendChild(h('div', { className: 'lb-done-row', style: { cursor: 'pointer' }, onClick: () => { S.activeId = p.id; S.tab = 'active'; save(); render(); } }, h('div', { className: 'lb-done-title' }, p.title), h('div', { className: 'lb-done-ts' }, p.completedAt ? fmtFull(p.completedAt) : ''))); }); } else { if (!S.log.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No activity yet')); return; } S.log.forEach(e => { el.appendChild(h('div', { className: 'lb-log-entry' }, h('div', { className: 'lb-log-dot', style: { background: logColor(e.action) } }), h('div', { className: 'lb-log-body' }, h('div', { className: 'lb-log-desc' }, ...logDesc(e)), h('div', { className: 'lb-log-ts' }, fmtFull(e.ts))))); }); } }
   function renderSidebarFooter() { const el = document.getElementById('lb-sidebar-footer'); el.innerHTML = ''; if (S._addingProject) { const wrap = h('div', { className: 'lb-add-proj-row' }); const inp = h('input', { placeholder: 'Project name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } if (ev.key === 'Escape') { S._addingProject = false; render(); } } }); const btn = h('button', { onClick: () => { if (inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } } }, 'Add'); wrap.append(inp, btn); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-new-proj-btn', onClick: () => { S._addingProject = true; render(); } }, '+ New Project')); } }
   function renderMain() { const el = document.getElementById('lb-main'); el.innerHTML = ''; const p = activeProj(); if (!p) { el.appendChild(h('div', { className: 'lb-empty-state' }, h('div', { className: 'icon' }, '📋'), h('p', {}, 'Select or create a project'))); return; } const pct = projPct(p); const st = projStatus(p); const stLabel = st === 'done' ? 'Completed' : st === 'ip' ? 'In Progress' : 'Not Started'; const header = h('div', { className: 'lb-proj-header' }, h('h1', { style: { cursor: 'pointer' }, title: 'Double-click to rename', onDblclick: function () { var newName = prompt('Rename project:', p.title); if (newName && newName.trim()) renameProject(p.id, newName.trim()); } }, p.title), h('div', { className: 'meta lb-project-summary' }, ...projectSummaryDates(p)), h('div', { className: 'lb-header-bar-wrap' }, h('div', { className: 'lb-header-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-header-row' }, h('div', { className: 'lb-header-pct', style: { color: statusColor(st, pct) } }, pct + '%'), h('div', { className: 'lb-status-badge ' + st, style: st === 'ip' ? { background: pct >= 50 ? 'rgba(39,174,96,.12)' : 'rgba(230,126,34,.12)', color: statusColor(st, pct) } : {} }, stLabel))); el.appendChild(header); if (S.addingTop) { const wrap = h('div', { className: 'lb-add-top-input' }); const inp = h('input', { placeholder: 'Task name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.addingTop = false; createTask(p.id, inp.value.trim()); } if (ev.key === 'Escape') { S.addingTop = false; render(); } } }); wrap.appendChild(inp); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-add-task-btn', onClick: () => { S.addingTop = true; render(); } }, '+ Add task')); } const tree = h('div', {}); p.children.forEach(t => tree.appendChild(renderTaskNode(t, p))); el.appendChild(tree); }
   function renderTaskNode(t, proj) { const st = calcStatus(t); const hasChildren = t.children && t.children.length > 0; const pct = hasChildren ? taskPct(t) : 0; const open = S.open[t.id] || {}; const isArmed = S._pendingDel === t.id; const toggle = h('div', { className: 'lb-expand-toggle' + (hasChildren ? (t.expanded ? ' expanded' : '') : ' hidden'), onClick: ev => { ev.stopPropagation(); if (hasChildren) { t.expanded = !t.expanded; save(); render(); } } }, '▶'); const line = h('div', { className: 'lb-status-line', style: { background: statusColor(st, pct) } }); let checkContent = ''; if (st === 'done') checkContent = '✓'; else if (st === 'ip') checkContent = '◑'; const check = h('div', { className: 'lb-task-check' + (st === 'done' ? ' done' : st === 'ip' ? ' ip' : ''), style: st === 'ip' ? { borderColor: statusColor(st, pct), color: statusColor(st, pct) } : {}, onClick: ev => { ev.stopPropagation(); toggleTask(proj.id, t.id); } }, checkContent); const body = h('div', { className: 'lb-task-body' }, h('div', { className: 'lb-task-title' + (t.done ? ' completed' : '') }, t.title), hasChildren ? h('div', { className: 'lb-task-sub-info' }, h('div', { className: 'lb-mini-bar-wrap' }, h('div', { className: 'lb-mini-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-mini-pct' }, pct + '%')) : null); const ts = t.completedAt ? h('div', { className: 'lb-task-ts' }, fmtFull(t.completedAt)) : null; const notesBadge = t.notes ? h('div', { className: 'badge', style: { background: 'var(--lb-amber)' } }) : null; const linksBadge = t.links && t.links.length ? h('div', { className: 'badge', style: { background: 'var(--lb-blue)' } }) : null; const actions = h('div', { className: 'lb-task-actions' + (isArmed ? ' force-show' : '') }, h('button', { className: 'lb-act-btn', title: 'Rename', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, renaming: !open.renaming, notes: false, links: false, addChild: false }; render(); } }, '✏️'), h('button', { className: 'lb-act-btn', title: 'Notes', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, notes: !open.notes, links: false, addChild: false, renaming: false }; render(); } }, '📝', notesBadge), h('button', { className: 'lb-act-btn', title: 'Links', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, links: !open.links, notes: false, addChild: false, renaming: false }; render(); } }, '🔗', linksBadge), h('button', { className: 'lb-act-btn', title: 'Add subtask', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, addChild: !open.addChild, notes: false, links: false, renaming: false }; render(); } }, '+'), h('button', { className: 'lb-act-btn' + (isArmed ? ' del-armed' : ''), title: 'Delete', onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelTimer); S._pendingDel = null; deleteTask(proj.id, t.id); return; } S._pendingDel = t.id; render(); S._pendingDelTimer = setTimeout(() => { S._pendingDel = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); const row = h('div', { className: 'lb-task-row' }, toggle, line, check, body, ts, actions); const node = h('div', { className: 'lb-task-node' }, row); if (open.renaming) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { value: t.title, onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], renaming: false }; renameTask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], renaming: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => { inp.focus(); inp.select(); }); } if (open.notes) { const panel = h('div', { className: 'lb-notes-panel' }); const autoGrow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }; const ta = h('textarea', { placeholder: 'Add notes…', onInput: ev => { updateNotes(proj.id, t.id, ev.target.value); autoGrow(ev.target); } }); ta.value = t.notes || ''; panel.appendChild(ta); node.appendChild(panel); requestAnimationFrame(() => { autoGrow(ta); ta.focus(); }); } if (open.links) { const panel = h('div', { className: 'lb-links-panel' }); const inputsWrap = h('div', { className: 'lb-link-inputs' }); const nameRow = h('div', { className: 'lb-link-input-row' }); const nameInp = h('input', { placeholder: 'Link name (optional)…' }); nameRow.append(nameInp); const urlRow = h('div', { className: 'lb-link-input-row' }); const urlInp = h('input', { placeholder: 'Paste URL…', onKeydown: ev => { if (ev.key === 'Enter' && urlInp.value.trim()) { addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } } }); const addBtn = h('button', { onClick: () => { if (urlInp.value.trim()) addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } }, 'Add'); urlRow.append(urlInp, addBtn); inputsWrap.append(nameRow, urlRow); panel.appendChild(inputsWrap); (t.links || []).forEach(l => { panel.appendChild(h('div', { className: 'lb-link-item' }, h('span', { className: 'lb-link-badge ' + l.type }, l.type === 'yt' ? 'YT' : l.type === 'gpt' ? 'GPT' : l.type === 'claude' ? 'Claude' : 'Link'), h('a', { className: 'lb-link-url', href: l.url, target: '_blank', rel: 'noopener' }, l.label), h('span', { className: 'lb-link-del', onClick: () => removeLink(proj.id, t.id, l.id) }, '✕'))); }); node.appendChild(panel); requestAnimationFrame(() => nameInp.focus()); } if (open.addChild) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { placeholder: 'Subtask name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], addChild: false }; createSubtask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], addChild: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } if (hasChildren && t.expanded) { const childWrap = h('div', { className: 'lb-task-children' }); t.children.forEach(c => childWrap.appendChild(renderTaskNode(c, proj))); node.appendChild(childWrap); } return node; }
 
-  function render() { renderTabs(); renderSidebarContent(); renderSidebarFooter(); renderMain(); }
+  function render() {
+    renderTabs(); renderSidebarContent(); renderSidebarFooter(); renderMain();
+    // Mobile: add dropdown toggle for project list
+    if (window.innerWidth <= 640) {
+      var sidebar = document.querySelector('#tab-logbook .lb-sidebar');
+      var content = document.getElementById('lb-sidebar-content');
+      var existingToggle = sidebar.querySelector('.lb-mobile-proj-toggle');
+      if (!existingToggle) {
+        var toggle = document.createElement('div');
+        toggle.className = 'lb-mobile-proj-toggle';
+        var p = activeProj();
+        toggle.innerHTML = '<span>' + (p ? p.title : 'Select Project') + '</span><span class="toggle-arrow' + (S._mobileProjectsOpen ? ' expanded' : '') + '">▼</span>';
+        toggle.addEventListener('click', function () {
+          S._mobileProjectsOpen = !S._mobileProjectsOpen;
+          content.classList.toggle('mobile-collapsed', !S._mobileProjectsOpen);
+          content.classList.toggle('mobile-expanded', S._mobileProjectsOpen);
+          var arrow = toggle.querySelector('.toggle-arrow');
+          if (arrow) arrow.classList.toggle('expanded', S._mobileProjectsOpen);
+        });
+        sidebar.insertBefore(toggle, content);
+        // Default: collapsed on mobile
+        if (!S._mobileProjectsOpen) {
+          content.classList.add('mobile-collapsed');
+          content.classList.remove('mobile-expanded');
+        } else {
+          content.classList.remove('mobile-collapsed');
+          content.classList.add('mobile-expanded');
+        }
+      } else {
+        var p2 = activeProj();
+        existingToggle.querySelector('span:first-child').textContent = p2 ? p2.title : 'Select Project';
+      }
+    }
+  }
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { if (S.addingTop) { S.addingTop = false; render(); } if (S._addingProject) { S._addingProject = false; render(); } } });
   render();
 }

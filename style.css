@@ -80,9 +80,9 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-progress::before{content:'';position:fixed;inset:46px 0 0 0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;opacity:.4;z-index:0}
 #tab-progress .wrapper{max-width:860px;margin:0 auto;position:relative;z-index:1}
 #tab-progress header{margin-bottom:48px}
-#tab-progress .tag{display:inline-block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);padding:4px 10px;margin-bottom:16px}
-#tab-progress h1{font-family:'Syne',sans-serif;font-size:clamp(32px,6vw,56px);font-weight:800;line-height:1;letter-spacing:-.02em;color:var(--text)}
-#tab-progress h1 span{color:var(--accent)}
+#tab-progress .tag{display:inline-block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#f0f0f5;border:1px solid #f0f0f5;padding:4px 10px;margin-bottom:16px}
+#tab-progress h1{font-family:'Syne',sans-serif;font-size:clamp(32px,6vw,56px);font-weight:800;line-height:1;letter-spacing:-.02em;color:#d4a85a}
+#tab-progress h1 span{color:#d4a85a}
 #tab-progress .subtitle{margin-top:10px;font-size:12px;color:var(--muted);letter-spacing:.05em}
 #tab-progress .chart-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:28px;position:relative;overflow:hidden}
 #tab-progress .chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
@@ -301,6 +301,15 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-ranker .btn-save-key:hover{background:var(--accent-glow)}
 #tab-ranker .key-status{font-size:11px;color:var(--muted);white-space:nowrap}
 #tab-ranker .key-status.ok{color:var(--green)}
+#tab-ranker .api-key-input-wrap{display:flex;gap:12px;flex:1;min-width:200px;align-items:center}
+#tab-ranker .api-key-saved{display:flex;gap:12px;align-items:center;flex:1}
+#tab-ranker .btn-change-key{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap}
+#tab-ranker .btn-change-key:hover{border-color:var(--accent);color:var(--accent)}
+#tab-ranker .prompt-section{margin-bottom:24px}
+#tab-ranker .prompt-hint{color:var(--muted);font-size:9px;font-style:italic;letter-spacing:.08em}
+#tab-ranker #ranking-prompt-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;resize:vertical;line-height:1.5;min-height:60px}
+#tab-ranker #ranking-prompt-input:focus{border-color:var(--accent)}
+#tab-ranker #ranking-prompt-input::placeholder{color:var(--muted);font-size:11px}
 #tab-ranker .add-section{margin-bottom:40px}
 #tab-ranker .section-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 #tab-ranker .add-row{display:flex;gap:10px}
@@ -627,14 +636,14 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #app-nav{height:46px;padding:0 12px}
   .nav-tab{display:none}
   .nav-user{display:none!important}
-  .mobile-menu-btn{display:flex;margin-left:auto;align-items:center;justify-content:center;width:36px;height:36px;background:transparent;border:1px solid #333;border-radius:6px;color:#aaa;font-size:18px;cursor:pointer}
+  .mobile-menu-btn{display:flex;margin-right:8px;align-items:center;justify-content:center;width:36px;height:36px;background:transparent;border:1px solid #333;border-radius:6px;color:#aaa;font-size:18px;cursor:pointer;order:-1;flex-shrink:0}
   #app-wrapper{top:46px;position:relative;min-height:calc(100vh - 46px);height:auto}
   .tool-tab{position:relative;inset:auto;overflow:visible;min-height:calc(100vh - 46px)}
   .tool-tab.active{display:block}
 
-  /* --- Mobile drawer --- */
-  .mobile-menu-drawer{display:flex;flex-direction:column;position:fixed;top:0;right:-280px;width:260px;height:100%;background:#111;border-left:1px solid #222;z-index:20001;transition:right .25s ease;padding:0}
-  .mobile-menu-drawer.open{right:0}
+  /* --- Mobile drawer (slides from LEFT) --- */
+  .mobile-menu-drawer{display:flex;flex-direction:column;position:fixed;top:0;left:-280px;width:260px;height:100%;background:#111;border-right:1px solid #222;z-index:20001;transition:left .25s ease;padding:0}
+  .mobile-menu-drawer.open{left:0}
   .mobile-menu-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #222}
   .mobile-menu-close{background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:4px 8px}
   .mobile-menu-items{flex:1;padding:12px 0;overflow-y:auto}
@@ -642,6 +651,8 @@ body{background:#080808;font-family:'DM Mono',monospace}
   .mobile-menu-item:hover,.mobile-menu-item.active{color:#e8e0d0;background:#1a1a1a}
   .mobile-menu-item.active{border-left:3px solid #d97757}
   .mobile-menu-item .nav-icon{font-size:16px}
+  .mobile-menu-divider{height:1px;background:#222;margin:8px 16px}
+  .mobile-story-btn{color:#b09080!important;font-size:12px!important}
   .mobile-menu-footer{padding:16px;border-top:1px solid #222;display:flex;flex-direction:column;align-items:center;gap:8px}
   .mobile-menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20000}
   .mobile-menu-backdrop.open{display:block}
@@ -650,6 +661,9 @@ body{background:#080808;font-family:'DM Mono',monospace}
   .auth-card{padding:28px 20px 24px}
   .auth-title{font-size:30px}
   .auth-google-btn{font-size:13px;padding:12px}
+
+  /* --- Hide footer Our Story on mobile (it's in the menu now) --- */
+  #app-footer{display:none!important}
 
   /* --- TRACKER --- */
   #tab-tracker header{padding:8px 12px;height:50px}
@@ -662,14 +676,17 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-tracker .week-label p{font-size:.75rem}
   #tab-tracker .nav-btn{width:32px;height:32px;font-size:.85rem}
 
-  /* Score cards: compact horizontal row */
-  #tab-tracker .score-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-  #tab-tracker .scard{padding:12px 14px;border-radius:10px}
-  #tab-tracker .scard-label{font-size:.58rem;margin-bottom:4px}
-  #tab-tracker .scard-val{font-size:1.6rem}
-  #tab-tracker .scard-sub{font-size:.65rem}
-  #tab-tracker .scard:last-child{grid-column:span 2}
-  #tab-tracker .tier-badge{font-size:.6rem;padding:3px 8px}
+  /* Score cards: single-line inline bars */
+  #tab-tracker .score-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  #tab-tracker .scard{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px}
+  #tab-tracker .scard::before{display:none}
+  #tab-tracker .scard-label{font-size:.65rem;margin-bottom:0;white-space:nowrap;min-width:70px}
+  #tab-tracker .scard-val{font-size:1.3rem;margin:0}
+  #tab-tracker .scard-sub{font-size:.6rem;margin:0;margin-left:auto}
+  #tab-tracker .scard:last-child{grid-column:auto}
+  #tab-tracker .scard.tier-card{gap:8px}
+  #tab-tracker .scard.tier-card > div[style]{margin-top:0!important}
+  #tab-tracker .tier-badge{font-size:.58rem;padding:2px 8px}
 
   /* Manual override: compact horizontal */
   #tab-tracker .manual-row{padding:10px 12px;margin-bottom:14px;gap:8px;flex-wrap:wrap}
@@ -679,11 +696,12 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-tracker .save-manual-btn{padding:6px 14px;font-size:.72rem}
   #tab-tracker .clear-manual-btn{padding:6px 12px;font-size:.72rem}
 
-  /* Day tabs */
-  #tab-tracker .day-tabs{gap:3px;margin-bottom:12px}
-  #tab-tracker .day-tab{padding:6px 2px;border-radius:8px}
-  #tab-tracker .dtab-name{font-size:.5rem}
-  #tab-tracker .dtab-date{font-size:.85rem}
+  /* Day tabs: horizontal scrollable strip */
+  #tab-tracker .day-tabs{display:flex;overflow-x:auto;gap:6px;margin-bottom:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  #tab-tracker .day-tabs::-webkit-scrollbar{display:none}
+  #tab-tracker .day-tab{padding:8px 12px;border-radius:10px;min-width:52px;flex-shrink:0}
+  #tab-tracker .dtab-name{font-size:.55rem}
+  #tab-tracker .dtab-date{font-size:.9rem}
 
   /* Day panel + two-step add flow */
   #tab-tracker .day-panel{padding:14px 12px;margin-bottom:14px;border-radius:12px}
@@ -709,9 +727,12 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-tracker .chart-header{flex-direction:column;gap:8px;margin-bottom:14px}
   #tab-tracker .chart-header h2{font-size:1rem}
   #tab-tracker .chart-header p{font-size:.7rem}
-  #tab-tracker .chart-legend{gap:6px}
-  #tab-tracker .legend-item{font-size:.55rem}
-  #tab-tracker .legend-dot{width:6px;height:6px}
+
+  /* Progress Over Time legend: vertical stack */
+  #tab-tracker .chart-legend{flex-direction:column;gap:4px}
+  #tab-tracker .legend-item{font-size:.6rem}
+  #tab-tracker .legend-dot{width:7px;height:7px}
+
   #tab-tracker .chart-wrap{padding-left:28px;padding-bottom:36px}
   #tab-tracker .chart-canvas-row{height:140px}
   #tab-tracker .y-lbl{font-size:.5rem;width:22px}
@@ -719,14 +740,14 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-tracker .x-lbl{font-size:.48rem}
   #tab-tracker .no-chart-msg{height:80px;font-size:.78rem;padding:0 10px;text-align:center}
 
-  /* Weekly report */
+  /* Weekly report: vertical single-column tiles */
   #tab-tracker .report-section{padding:16px 12px;margin-bottom:14px;border-radius:12px}
   #tab-tracker .report-section h2{font-size:1rem;margin-bottom:12px}
-  #tab-tracker .report-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-  #tab-tracker .report-stat{padding:10px 12px;border-radius:8px}
-  #tab-tracker .report-stat .rs-lbl{font-size:.55rem}
-  #tab-tracker .report-stat .rs-val{font-size:1.2rem}
-  #tab-tracker .report-stat .rs-sub{font-size:.65rem}
+  #tab-tracker .report-grid{grid-template-columns:1fr;gap:6px;margin-bottom:12px}
+  #tab-tracker .report-stat{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px}
+  #tab-tracker .report-stat .rs-lbl{font-size:.6rem;min-width:80px;margin-bottom:0}
+  #tab-tracker .report-stat .rs-val{font-size:1.1rem}
+  #tab-tracker .report-stat .rs-sub{font-size:.6rem;margin-left:auto;margin-top:0}
   #tab-tracker .report-text{font-size:.8rem;line-height:1.6}
 
   /* All Weeks list */
@@ -741,17 +762,19 @@ body{background:#080808;font-family:'DM Mono',monospace}
 
   /* --- PROGRESS --- */
   #tab-progress{padding:20px 12px}
-  #tab-progress header{margin-bottom:24px}
-  #tab-progress h1{font-size:28px}
+  #tab-progress header{margin-bottom:20px}
+  #tab-progress h1{font-size:22px}
   #tab-progress .chart-card{padding:16px 12px;margin-bottom:16px}
   #tab-progress .chart-header{flex-direction:column;gap:8px}
-  #tab-progress .chart-title{font-size:16px}
-  #tab-progress .chart-stats{gap:12px}
-  #tab-progress .stat-val{font-size:18px}
-  #tab-progress .pass-input{width:60px!important;font-size:18px}
-  #tab-progress canvas#prog-chart{max-height:200px}
-  #tab-progress .controls{gap:8px}
-  #tab-progress .btn{font-size:11px;padding:8px 14px}
+  #tab-progress .chart-title{font-size:14px}
+  #tab-progress .chart-stats{flex-direction:column;gap:8px}
+  #tab-progress .stat{text-align:left;display:flex;align-items:center;gap:8px}
+  #tab-progress .stat-val{font-size:16px}
+  #tab-progress .stat-lbl{font-size:9px}
+  #tab-progress .pass-input{width:50px!important;font-size:16px}
+  #tab-progress canvas#prog-chart{max-height:180px}
+  #tab-progress .controls{gap:6px;flex-direction:column}
+  #tab-progress .btn{font-size:11px;padding:8px 14px;width:100%;text-align:center;justify-content:center}
   #tab-progress .table-card{padding:16px 12px}
   #tab-progress .data-row{grid-template-columns:90px 1fr 36px;gap:6px}
   #tab-progress .col-headers{grid-template-columns:90px 1fr 36px;gap:6px}
@@ -760,16 +783,23 @@ body{background:#080808;font-family:'DM Mono',monospace}
 
   /* --- RANKER --- */
   #tab-ranker .container{padding:20px 12px 80px}
-  #tab-ranker header{margin-bottom:20px;padding-bottom:16px}
-  #tab-ranker h1{font-size:24px}
-  #tab-ranker .header-top{flex-direction:column;gap:8px}
-  #tab-ranker .status-bar{align-items:flex-start;gap:4px}
-  #tab-ranker .api-section{flex-direction:row;flex-wrap:wrap;padding:12px 14px;margin-bottom:20px;gap:8px}
+  #tab-ranker header{margin-bottom:16px;padding-bottom:12px}
+  #tab-ranker h1{font-size:22px}
+  #tab-ranker .header-top{flex-direction:column;gap:6px}
+  #tab-ranker .status-bar{align-items:flex-start;gap:4px;flex-direction:row;flex-wrap:wrap}
+  #tab-ranker .status-pill{font-size:10px;padding:4px 10px}
+  #tab-ranker #next-run-display{font-size:10px}
+  #tab-ranker .api-section{flex-direction:column;padding:12px 14px;margin-bottom:16px;gap:8px}
   #tab-ranker .api-label{font-size:9px;width:auto}
-  #tab-ranker #api-key-input{flex:1;min-width:120px;font-size:11px;padding:7px 10px}
+  #tab-ranker .api-key-input-wrap{flex-direction:row;width:100%}
+  #tab-ranker #api-key-input{flex:1;min-width:0;font-size:11px;padding:7px 10px}
   #tab-ranker .btn-save-key{padding:7px 12px;font-size:10px}
   #tab-ranker .key-status{font-size:10px}
-  #tab-ranker .add-section{margin-bottom:20px}
+  #tab-ranker .api-key-saved{flex-wrap:wrap;gap:8px}
+  #tab-ranker .btn-change-key{font-size:10px;padding:5px 12px}
+  #tab-ranker .prompt-section{margin-bottom:16px}
+  #tab-ranker #ranking-prompt-input{font-size:11px;padding:10px 12px;min-height:50px}
+  #tab-ranker .add-section{margin-bottom:16px}
   #tab-ranker .add-row{flex-direction:column;gap:8px}
   #tab-ranker #question-input{font-size:12px;padding:10px 14px}
   #tab-ranker .btn-add{padding:10px;font-size:12px;width:100%;text-align:center}
@@ -778,27 +808,55 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-ranker .score-badge{width:34px;height:34px;font-size:14px}
   #tab-ranker .question-text{font-size:12px}
   #tab-ranker .question-reason{font-size:10px}
-  #tab-ranker .log-section{margin-top:24px;padding-top:16px}
+  #tab-ranker .log-section{margin-top:20px;padding-top:12px}
   #tab-ranker #eval-log{font-size:10px;padding:10px 12px;max-height:120px}
 
   /* --- STREAK --- */
-  #tab-streak header{padding:16px 12px 12px}
-  #tab-streak .brand{font-size:2rem}
+  #tab-streak header{padding:16px 12px 12px;flex-wrap:wrap;gap:8px}
+  #tab-streak .brand{font-size:1.8rem}
+  #tab-streak .brand-sub{font-size:.55rem;margin-bottom:2px}
+  #tab-streak .date-display{font-size:.6rem}
+  #tab-streak .date-display span{font-size:.75rem}
   #tab-streak main{padding:16px 10px 0}
-  #tab-streak .create-panel{padding:16px 14px}
-  #tab-streak .create-row{grid-template-columns:1fr}
-  #tab-streak .card-inner{grid-template-columns:1fr auto}
-  #tab-streak .card-center{display:none}
-  #tab-streak .progress-wrap{padding:0 14px 14px}
-  #tab-streak .progress-dots .dot{width:8px;height:8px}
+  #tab-streak .create-panel{padding:14px 12px}
+  #tab-streak .panel-label{font-size:.55rem;margin-bottom:12px}
+  #tab-streak .create-row{grid-template-columns:1fr;gap:10px}
+  #tab-streak .field-group label{font-size:.55rem}
+  #tab-streak .field-group input{font-size:.8rem;padding:8px 12px}
+  #tab-streak .btn-create{padding:10px 18px;font-size:1rem}
+  #tab-streak .card-inner{grid-template-columns:1fr;gap:8px;padding:14px}
+  #tab-streak .card-left{order:1}
+  #tab-streak .task-name{font-size:1rem}
+  #tab-streak .streak-meta{flex-wrap:wrap;gap:6px;font-size:.6rem}
+  #tab-streak .card-center{display:flex;flex-direction:row;align-items:center;gap:8px;order:2}
+  #tab-streak .streak-number{font-size:2rem}
+  #tab-streak .streak-label{font-size:.5rem;margin-top:0}
+  #tab-streak .card-right{flex-direction:row;order:3;align-items:center;gap:6px}
+  #tab-streak .btn-log{font-size:.65rem;padding:6px 14px}
+  #tab-streak .btn-delete{font-size:.6rem;padding:5px 10px}
+  #tab-streak .progress-wrap{padding:0 14px 12px}
+  #tab-streak .progress-dots{flex-wrap:wrap;gap:2px}
+  #tab-streak .progress-dots .dot{width:7px;height:7px}
+  #tab-streak .streak-consistency{font-size:.65rem;padding:0 12px 10px}
+  #tab-streak .confirm-box{padding:20px;max-width:90%}
+  #tab-streak .confirm-box h3{font-size:1.1rem}
+  #tab-streak .confirm-box p{font-size:.7rem}
 
-  /* --- LOGBOOK --- */
+  /* --- LOGBOOK (dropdown project selector) --- */
   #tab-logbook .lb-app{flex-direction:column;height:auto;min-height:calc(100vh - 46px)}
-  #tab-logbook .lb-sidebar{width:100%;min-width:100%;max-height:none;height:auto;border-right:none;border-bottom:1px solid #1e1e1e}
-  #tab-logbook .lb-sidebar-content{max-height:200px;overflow-y:auto}
-  #tab-logbook .lb-main{padding:20px 14px;height:auto;overflow:visible}
-  #tab-logbook .lb-proj-header h1{font-size:20px}
-  #tab-logbook .lb-proj-header .meta{font-size:11px}
+  #tab-logbook .lb-sidebar{width:100%;min-width:100%;max-height:none;height:auto;border-right:none;border-bottom:1px solid #1e1e1e;flex-shrink:0}
+  #tab-logbook .lb-tabs{border-bottom:1px solid #1e1e1e}
+  #tab-logbook .lb-tab{padding:10px 0;font-size:11px}
+  #tab-logbook .lb-sidebar-content{max-height:none;overflow-y:visible;padding:4px 0}
+  /* Collapsed by default, shown when toggled */
+  #tab-logbook .lb-sidebar-content.mobile-collapsed{max-height:0;overflow:hidden;padding:0}
+  #tab-logbook .lb-sidebar-content.mobile-expanded{max-height:50vh;overflow-y:auto;padding:4px 0}
+  #tab-logbook .lb-proj-row{padding:8px 12px}
+  #tab-logbook .lb-proj-title{font-size:12px}
+  #tab-logbook .lb-main{padding:16px 12px;height:auto;overflow:visible}
+  #tab-logbook .lb-proj-header{margin-bottom:20px}
+  #tab-logbook .lb-proj-header h1{font-size:18px}
+  #tab-logbook .lb-proj-header .meta{font-size:10px}
   #tab-logbook .lb-task-row{padding:6px 4px;gap:4px}
   #tab-logbook .lb-task-title{font-size:12px}
   #tab-logbook .lb-task-actions{opacity:1}
@@ -807,4 +865,8 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-logbook .lb-links-panel{padding:6px 6px 6px 20px}
   #tab-logbook .lb-task-children{padding-left:16px}
   #tab-logbook .lb-add-child-wrap{padding-left:16px}
+  /* Mobile project dropdown toggle */
+  .lb-mobile-proj-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--lb-surface2,#1b1b1b);border-bottom:1px solid #222;cursor:pointer;font-size:13px;font-weight:600;color:var(--lb-text,#e8e4dc)}
+  .lb-mobile-proj-toggle .toggle-arrow{font-size:10px;color:var(--lb-muted,#8a8680);transition:transform .2s}
+  .lb-mobile-proj-toggle .toggle-arrow.expanded{transform:rotate(180deg)}
 }
