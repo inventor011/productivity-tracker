@@ -26,8 +26,8 @@ function closeMobileMenu() {
     if (footer && email) {
       var html = '';
       if (avatar && avatar.src && avatar.style.display !== 'none') html += '<img src="' + avatar.src + '" class="nav-avatar" style="width:32px;height:32px"/>';
-      html += '<span style="font-size:13px;color:#aaa">' + email.textContent + '</span>';
-      html += '<button onclick="document.getElementById(\'nav-logout\').click();closeMobileMenu()" style="margin-top:8px;width:100%;padding:10px;background:transparent;border:1px solid #333;color:#e07070;font-family:\'DM Mono\',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px;cursor:pointer">Sign Out</button>';
+      html += '<span style="font-size:13px;color:#aaa;font-family:Inter,system-ui,sans-serif;font-weight:500">' + email.textContent + '</span>';
+      html += '<button onclick="document.getElementById(\'nav-logout\').click();closeMobileMenu()" style="margin-top:8px;width:100%;padding:10px;background:transparent;border:1px solid #333;color:#e07070;font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;cursor:pointer">Sign Out</button>';
       footer.innerHTML = html;
     }
   });
