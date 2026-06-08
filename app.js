@@ -224,7 +224,7 @@ async function initProgress() {
   function chartCommonOptions() {
     var isMobile = window.innerWidth <= 640;
     var tickSize = isMobile ? 9 : 11;
-    return { responsive: true, maintainAspectRatio: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Syne', size: 13, weight: '700' }, bodyFont: { family: 'DM Mono', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { color: '#1e1e2a' }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'DM Mono', size: tickSize, weight: 'bold' }, maxRotation: 45, minRotation: 0, autoSkip: true, autoSkipPadding: 4 }, border: { color: '#2a2a38' } }, y: { min: 0, grid: { color: '#1e1e2a' }, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: tickSize }, callback: v => v + '%' }, border: { color: '#2a2a38' } } } };
+    return { responsive: true, maintainAspectRatio: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Inter, system-ui, sans-serif', size: 13, weight: '700' }, bodyFont: { family: 'Inter, system-ui, sans-serif', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { display: false }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'Inter, system-ui, sans-serif', size: tickSize, weight: 'bold' }, maxRotation: 45, minRotation: 0, autoSkip: true, autoSkipPadding: 4 }, border: { display: false } }, y: { min: 0, grid: { display: false }, ticks: { color: '#6b6b80', font: { family: 'Inter, system-ui, sans-serif', size: tickSize }, callback: v => v + '%' }, border: { display: false } } } };
   }
 
   function buildChart(type) {
@@ -513,7 +513,10 @@ async function initTracker() {
     const wn = getWeekNum(new Date(mondayKey + 'T00:00:00'));
     document.getElementById('weekPill').textContent = 'Week ' + wn;
     document.getElementById('weekTitle').textContent = 'Week ' + wn;
-    document.getElementById('weekRange').textContent = fmt(dates[0]) + '  –  ' + fmt(dates[6]);
+    var rangeText = fmt(dates[0]) + '  –  ' + fmt(dates[6]);
+    document.getElementById('weekRange').textContent = rangeText;
+    var wr2 = document.getElementById('weekRange2');
+    if (wr2) wr2.textContent = rangeText;
     const ws = weekScore(data, mondayKey), t = tier(ws);
     document.getElementById('sc-week').textContent = ws != null ? ws.toFixed(2) : '—';
     document.getElementById('sc-week-sub').textContent = data.manualRating != null ? '★ Manual override' : (ws != null ? 'Sum of daily averages' : 'No data yet');

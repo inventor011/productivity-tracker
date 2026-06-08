@@ -76,12 +76,12 @@ body{background:#080808;font-family:'DM Mono',monospace}
 @keyframes todo-slideOut{from{opacity:1;transform:translateX(0);max-height:80px}to{opacity:0;transform:translateX(20px);max-height:0;padding:0}}
 
 /* TAB 2 — WEEKLY PROGRESS */
-#tab-progress{--bg:#0a0a0f;--surface:#111118;--card:#16161f;--border:#2a2a38;--accent:#c8ff00;--accent2:#7c6fff;--text:#f0f0f5;--muted:#6b6b80;--danger:#ff4d6d;--input-bg:#1c1c28;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100%;padding:40px 20px}
+#tab-progress{--bg:#0a0a0f;--surface:#111118;--card:#16161f;--border:#2a2a38;--accent:#c8ff00;--accent2:#7c6fff;--text:#f0f0f5;--muted:#6b6b80;--danger:#ff4d6d;--input-bg:#1c1c28;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100%;padding:40px 20px}
 #tab-progress::before{content:'';position:fixed;inset:46px 0 0 0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;opacity:.4;z-index:0}
 #tab-progress .wrapper{max-width:860px;margin:0 auto;position:relative;z-index:1}
 #tab-progress header{margin-bottom:48px}
 #tab-progress .tag{display:inline-block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#f0f0f5;border:1px solid #f0f0f5;padding:4px 10px;margin-bottom:16px}
-#tab-progress h1{font-family:'Syne',sans-serif;font-size:clamp(32px,6vw,56px);font-weight:800;line-height:1;letter-spacing:-.02em;color:#d4a85a}
+#tab-progress h1{font-family:'Inter',system-ui,sans-serif;font-size:clamp(32px,6vw,56px);font-weight:800;line-height:1;letter-spacing:-.02em;color:#d4a85a}
 #tab-progress h1 span{color:#d4a85a}
 #tab-progress .subtitle{margin-top:10px;font-size:12px;color:var(--muted);letter-spacing:.05em}
 #tab-progress .chart-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:28px;margin-bottom:28px;position:relative;overflow:hidden}
@@ -89,14 +89,14 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-progress .chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;flex-wrap:wrap;gap:12px}
 #tab-progress .chart-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
 #tab-progress .chart-type-toggle{display:inline-flex;margin-top:8px;border:1px solid var(--border);border-radius:4px;overflow:hidden}
-#tab-progress .chart-type-btn{background:transparent;border:none;padding:5px 14px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+#tab-progress .chart-type-btn{background:transparent;border:none;padding:5px 14px;font-family:'Inter',system-ui,sans-serif;font-size:11px;letter-spacing:.08em;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
 #tab-progress .chart-type-btn:not(:last-child){border-right:1px solid var(--border)}
 #tab-progress .chart-type-btn.active{background:var(--accent);color:#0a0a0f}
 #tab-progress .chart-type-btn:hover:not(.active){color:var(--text)}
-#tab-progress .chart-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-top:4px;color:var(--text)}
+#tab-progress .chart-title{font-family:'Inter',system-ui,sans-serif;font-size:20px;font-weight:700;margin-top:4px;color:var(--text)}
 #tab-progress .chart-stats{display:flex;gap:20px}
 #tab-progress .stat{text-align:right}
-#tab-progress .stat-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent)}
+#tab-progress .stat-val{font-family:'Inter',system-ui,sans-serif;font-size:22px;font-weight:700;color:var(--accent)}
 #tab-progress .stat-lbl{font-size:10px;color:var(--muted);letter-spacing:.1em}
 #tab-progress canvas#prog-chart{width:100%!important}
 #tab-progress .controls{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
@@ -106,22 +106,22 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-progress .row-list{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
 #tab-progress .data-row{display:grid;grid-template-columns:110px 1fr 44px;gap:10px;align-items:center;animation:prog-fadeIn .25s ease}
 @keyframes prog-fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-#tab-progress input[type="number"],#tab-progress input[type="text"]{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 14px;border-radius:2px;outline:none;transition:border-color .2s}
+#tab-progress input[type="number"],#tab-progress input[type="text"]{width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:13px;padding:10px 14px;border-radius:2px;outline:none;transition:border-color .2s}
 #tab-progress input[type="number"]:focus,#tab-progress input[type="text"]:focus{border-color:var(--accent)}
 #tab-progress .del-btn{background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:16px;padding:0;width:44px;height:44px;border-radius:2px;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
 #tab-progress .del-btn:hover{border-color:var(--danger);color:var(--danger);background:rgba(255,77,109,.06)}
 #tab-progress .col-headers{display:grid;grid-template-columns:110px 1fr 44px;gap:10px;margin-bottom:8px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:0 2px}
-#tab-progress .btn{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;border-radius:2px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+#tab-progress .btn{display:inline-flex;align-items:center;gap:8px;font-family:'Inter',system-ui,sans-serif;font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;padding:10px 18px;border-radius:2px;cursor:pointer;transition:all .15s;border:1px solid transparent}
 #tab-progress .btn-primary{background:var(--accent);color:#0a0a0f;border-color:var(--accent);font-weight:500}
 #tab-progress .btn-primary:hover{background:#d9ff26;transform:translateY(-1px)}
 #tab-progress .btn-ghost{background:transparent;color:var(--text);border-color:var(--border)}
 #tab-progress .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
-#tab-progress .btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;border-radius:2px;cursor:pointer;transition:all .15s}
+#tab-progress .btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'Inter',system-ui,sans-serif;font-size:12px;letter-spacing:.04em;text-transform:uppercase;font-weight:600;padding:10px 18px;border-radius:2px;cursor:pointer;transition:all .15s}
 #tab-progress .btn-outline:hover{border-color:var(--danger);color:var(--danger)}
 #tab-progress .name-row{display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap}
 #tab-progress .name-row label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
 #tab-progress .name-row input{flex:1;min-width:180px}
-#tab-progress .toast{position:fixed;bottom:30px;right:30px;background:var(--accent);color:#0a0a0f;font-family:'DM Mono',monospace;font-size:12px;padding:12px 20px;border-radius:2px;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;letter-spacing:.05em}
+#tab-progress .toast{position:fixed;bottom:30px;right:30px;background:var(--accent);color:#0a0a0f;font-family:'Inter',system-ui,sans-serif;font-size:12px;padding:12px 20px;border-radius:2px;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;letter-spacing:.02em}
 #tab-progress .toast.show{opacity:1;transform:translateY(0)}
 #tab-progress{--pass:#27ae60;--fail:#ff4d6d}
 #tab-progress .chart-card.pass{border-color:rgba(39,174,96,.55)}
@@ -131,18 +131,20 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-progress .chart-card.pass .stat-val{color:var(--pass)}
 #tab-progress .chart-card.fail .stat-val{color:var(--fail)}
 #tab-progress .chart-status{display:none}
-#tab-progress .pass-input{width:76px!important;background:var(--input-bg);border:1px solid var(--border);border-radius:2px;color:inherit;font-family:'Syne',sans-serif;font-size:22px;font-weight:700;text-align:right;padding:4px 8px;outline:none}
+#tab-progress .pass-input{width:76px!important;background:var(--input-bg);border:1px solid var(--border);border-radius:2px;color:inherit;font-family:'Inter',system-ui,sans-serif;font-size:22px;font-weight:700;text-align:right;padding:4px 8px;outline:none}
 #tab-progress .pass-input:focus{border-color:currentColor}
 
 /* TAB 3 — TRACKER (styles kept identical, abbreviated for space) */
 #tab-tracker[data-theme="light"]{--bg:#f2ede4;--bg2:#e8e1d6;--surface:#fefcf7;--surface2:#f5f0e6;--border:#ddd5c6;--border2:#c8bfae;--text:#1c1710;--text2:#4a4030;--text3:#9a8e7a;--accent:#b8621a;--accent2:#d4832e;--accent-soft:#f5e4d0;--gold:#c8962a;--green:#3a8a56;--green-s:#d0edda;--blue:#2a6aa8;--blue-s:#d0e4f5;--red:#b83a2a;--red-s:#f5d8d4;--amber:#d4a020;--amber-s:#f5eacc;--shadow:rgba(0,0,0,.06);--shadow2:rgba(0,0,0,.14)}
 #tab-tracker[data-theme="dark"]{--bg:#120f0a;--bg2:#1c1810;--surface:#201c14;--surface2:#2a2518;--border:#36301e;--border2:#4a4230;--text:#f0e8d8;--text2:#b8a888;--text3:#706050;--accent:#d4832e;--accent2:#e8a84a;--accent-soft:#3a2010;--gold:#d4a020;--green:#4aaa6a;--green-s:#142a1c;--blue:#4a8acc;--blue-s:#0e2030;--red:#cc5040;--red-s:#301010;--amber:#d4a820;--amber-s:#302010;--shadow:rgba(0,0,0,.3);--shadow2:rgba(0,0,0,.55)}
 #tab-tracker{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100%;transition:background .3s,color .3s}
-#tab-tracker header{background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px var(--shadow)}
-#tab-tracker .logo{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:900;letter-spacing:-.03em}
+#tab-tracker header{background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 32px;height:80px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px var(--shadow)}
+#tab-tracker .header-left{display:flex;flex-direction:column;gap:0}
+#tab-tracker .week-title-big{font-family:'Inter',system-ui,sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+#tab-tracker .week-range-sub{font-size:.78rem;color:var(--text3);font-weight:500;margin-top:2px}
+#tab-tracker .logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;letter-spacing:-.03em;color:var(--text3)}
 #tab-tracker .logo em{color:var(--accent);font-style:normal}
 #tab-tracker .h-right{display:flex;align-items:center;gap:14px}
-#tab-tracker .week-pill{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3);background:var(--bg2);border:1px solid var(--border);padding:4px 12px;border-radius:20px;letter-spacing:.04em}
 #tab-tracker .toggle-wrap{display:flex;align-items:center;gap:8px}
 #tab-tracker .toggle-lbl{font-size:.75rem;color:var(--text3);font-weight:600}
 #tab-tracker .tog{width:44px;height:24px;background:var(--border2);border-radius:12px;border:none;cursor:pointer;position:relative;transition:background .3s}
@@ -238,7 +240,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-tracker .chart-canvas-row{position:relative;height:220px;overflow:visible;margin-top:22px}
 #tab-tracker .y-labels{position:absolute;left:0;top:0;bottom:0;display:flex;flex-direction:column;justify-content:space-between}
 #tab-tracker .y-lbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);width:28px;text-align:right;transform:translateY(-50%);padding-right:4px}
-#tab-tracker .grid-line{position:absolute;left:0;right:0;border-top:1px dashed var(--border)}
+#tab-tracker .grid-line{display:none}
 #tab-tracker .zone-band{position:absolute;left:0;right:0;opacity:.15;pointer-events:none}
 #tab-tracker .zone-over{background:var(--green)}#tab-tracker .zone-good{background:var(--blue)}#tab-tracker .zone-avg{background:var(--amber)}#tab-tracker .zone-under{background:var(--red)}
 #tab-tracker .chart-bars-row{position:absolute;left:0;right:0;bottom:0;top:0;display:flex;align-items:flex-end;gap:6px;padding:0 8px}
@@ -436,7 +438,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 @media(max-width:600px){#tab-streak header{padding:20px 16px 16px}#tab-streak main{padding:24px 12px 0}#tab-streak .brand{font-size:2.2rem}#tab-streak .create-row{grid-template-columns:1fr}#tab-streak .card-inner{grid-template-columns:1fr auto}#tab-streak .card-center{display:none}#tab-streak .progress-wrap{padding:0 14px 14px}#tab-streak .progress-dots .dot{width:8px;height:8px}}
 
 /* TAB 6 — LOGBOOK */
-#tab-logbook{--lb-bg:#0b0b0b;--lb-surface:#141414;--lb-surface2:#1b1b1b;--lb-text:#e8e4dc;--lb-muted:#8a8680;--lb-faint:#4e4c49;--lb-red:#d63031;--lb-green:#27ae60;--lb-amber:#e67e22;--lb-blue:#3498db;--lb-sidebar-w:272px;--lb-indent:26px;background:var(--lb-bg);color:var(--lb-text);font-family:'Syne',sans-serif;font-size:14px;line-height:1.5;min-height:100%}
+#tab-logbook{--lb-bg:#0b0b0b;--lb-surface:#141414;--lb-surface2:#1b1b1b;--lb-text:#e8e4dc;--lb-muted:#8a8680;--lb-faint:#4e4c49;--lb-red:#d63031;--lb-green:#27ae60;--lb-amber:#e67e22;--lb-blue:#3498db;--lb-sidebar-w:272px;--lb-indent:26px;background:var(--lb-bg);color:var(--lb-text);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:14px;line-height:1.5;min-height:100%}
 #tab-logbook button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
 #tab-logbook input,#tab-logbook textarea{font-family:inherit;font-size:inherit;color:var(--lb-text);background:var(--lb-surface2);border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;outline:none;width:100%}
 #tab-logbook input:focus,#tab-logbook textarea:focus{border-color:var(--lb-red)}
@@ -526,7 +528,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-logbook .lb-act-btn.del-armed{color:var(--lb-red)!important;font-weight:700}
 #tab-logbook .lb-task-children{padding-left:var(--lb-indent)}
 #tab-logbook .lb-notes-panel{padding:8px 8px 8px calc(var(--lb-indent) + 30px);animation:lb-slideDown .15s ease}
-#tab-logbook .lb-notes-panel textarea{font-family:'JetBrains Mono',monospace;font-size:12px;overflow:hidden;resize:none;min-height:44px;line-height:1.7}
+#tab-logbook .lb-notes-panel textarea{font-family:'Inter',system-ui,sans-serif;font-size:13px;overflow:hidden;resize:none;min-height:44px;line-height:1.7}
 #tab-logbook .lb-links-panel{padding:8px 8px 8px calc(var(--lb-indent) + 30px);animation:lb-slideDown .15s ease}
 #tab-logbook .lb-link-inputs{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 #tab-logbook .lb-link-input-row{display:flex;gap:6px}
