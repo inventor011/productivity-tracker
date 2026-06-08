@@ -54,6 +54,9 @@ function switchTab(name, persist) {
   if (brand && window.innerWidth <= 640) {
     brand.textContent = '⬛ ' + (TAB_LABELS[name] || 'Dashboard');
   }
+  // Show/hide "Change API Key" menu item based on tab
+  var apiKeyBtn = document.getElementById('mobile-change-api-key');
+  if (apiKeyBtn) apiKeyBtn.style.display = (name === 'ranker') ? '' : 'none';
   if (persist !== false) DB.savePrefs({ active_tab: name, tracker_theme: document.getElementById('tab-tracker').getAttribute('data-theme') || 'light' });
 }
 
@@ -509,7 +512,7 @@ async function initTracker() {
     if (selectedDayIdx === null) { if (isThis) { selectedDayIdx = new Date().getDay(); } else selectedDayIdx = 0; }
     const wn = getWeekNum(new Date(mondayKey + 'T00:00:00'));
     document.getElementById('weekPill').textContent = 'Week ' + wn;
-    document.getElementById('weekTitle').textContent = isThis ? 'This Week' : currentOffset < 0 ? Math.abs(currentOffset) + ' Week' + (Math.abs(currentOffset) > 1 ? 's' : '') + ' Ago' : currentOffset + ' Week Ahead';
+    document.getElementById('weekTitle').textContent = 'Week ' + wn;
     document.getElementById('weekRange').textContent = fmt(dates[0]) + '  –  ' + fmt(dates[6]);
     const ws = weekScore(data, mondayKey), t = tier(ws);
     document.getElementById('sc-week').textContent = ws != null ? ws.toFixed(2) : '—';
@@ -819,10 +822,11 @@ async function initRanker() {
 
   // --- API Key UI management ---
   function showKeySavedUI() {
-    document.getElementById('api-key-input-wrap').style.display = 'none';
-    document.getElementById('api-key-saved').style.display = 'flex';
+    document.getElementById('api-section').style.display = 'none';
   }
   function showKeyInputUI() {
+    var sec = document.getElementById('api-section');
+    sec.style.display = 'flex';
     document.getElementById('api-key-saved').style.display = 'none';
     var wrap = document.getElementById('api-key-input-wrap');
     wrap.style.display = 'flex';

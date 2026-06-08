@@ -734,11 +734,9 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   #app-footer{display:none!important}
 
   /* --- TRACKER --- */
-  #tab-tracker header{padding:8px 12px;height:50px}
-  #tab-tracker .logo{font-size:1.1rem}
-  #tab-tracker .week-pill{font-size:.6rem;padding:2px 8px}
+  #tab-tracker header{display:none}
   #tab-tracker .toggle-lbl{font-size:.6rem}
-  #tab-tracker main{padding:12px 10px 80px}
+  #tab-tracker main{padding:8px 10px 80px}
   #tab-tracker .week-nav{margin-bottom:14px}
   #tab-tracker .week-nav h1{font-size:1.3rem}
   #tab-tracker .week-label p{font-size:.75rem}
@@ -836,10 +834,10 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   #tab-progress .chart-header{flex-direction:column;gap:8px}
   #tab-progress .chart-title{font-size:14px}
   #tab-progress .chart-status{display:none}
-  #tab-progress .chart-stats{flex-direction:row;gap:10px;flex-wrap:nowrap}
-  #tab-progress .stat{text-align:left;display:flex;align-items:center;gap:4px;flex:1}
+  #tab-progress .chart-stats{flex-direction:row;gap:8px;flex-wrap:nowrap;align-items:baseline}
+  #tab-progress .stat{text-align:left;display:flex;align-items:baseline;gap:3px;flex:0 0 auto}
   #tab-progress .stat-val{font-size:14px}
-  #tab-progress .stat-lbl{font-size:8px}
+  #tab-progress .stat-lbl{font-size:8px;white-space:nowrap}
   #tab-progress .pass-input{width:44px!important;font-size:14px;padding:2px 4px!important}
   #tab-progress canvas#prog-chart{max-height:180px}
   #tab-progress .controls{gap:6px;flex-direction:column}
