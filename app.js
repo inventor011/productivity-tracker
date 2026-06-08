@@ -36,6 +36,7 @@ function closeMobileMenu() {
 })();
 
 // ==================== TAB SWITCHING ====================
+var TAB_LABELS = { tracker: 'Weekly Tracker', todo: 'To-Do', progress: 'Progress', ranker: 'Ranker', streak: 'Streak', logbook: 'Logbook' };
 function switchTab(name, persist) {
   const panel = document.getElementById('tab-' + name);
   const button = document.querySelector('.nav-tab[data-tab="' + name + '"]');
@@ -48,8 +49,30 @@ function switchTab(name, persist) {
   document.querySelectorAll('.mobile-menu-item').forEach(function (mi) {
     mi.classList.toggle('active', mi.dataset.tab === name);
   });
+  // Update mobile header to show current tab name
+  var brand = document.getElementById('nav-brand-label');
+  if (brand && window.innerWidth <= 640) {
+    brand.textContent = '⬛ ' + (TAB_LABELS[name] || 'Dashboard');
+  }
   if (persist !== false) DB.savePrefs({ active_tab: name, tracker_theme: document.getElementById('tab-tracker').getAttribute('data-theme') || 'light' });
 }
+
+// ==================== GLOBAL THEME TOGGLE ====================
+function toggleGlobalTheme() {
+  var tracker = document.getElementById('tab-tracker');
+  var current = tracker.getAttribute('data-theme') || 'light';
+  var next = current === 'dark' ? 'light' : 'dark';
+  tracker.setAttribute('data-theme', next);
+  // Update theme toggle icons
+  var desktopBtn = document.getElementById('nav-theme-toggle');
+  if (desktopBtn) desktopBtn.textContent = next === 'dark' ? '☀️' : '🌙';
+  var mobileBtn = document.getElementById('mobile-theme-toggle');
+  if (mobileBtn) {
+    mobileBtn.innerHTML = '<span class="nav-icon">' + (next === 'dark' ? '☀️' : '🌙') + '</span> ' + (next === 'dark' ? 'Light Mode' : 'Dark Mode');
+  }
+  DB.savePrefs({ tracker_theme: next });
+}
+window.toggleGlobalTheme = toggleGlobalTheme;
 
 // ==================== INIT ALL TABS ON AUTH READY ====================
 DB.onReady(async function () {
@@ -57,7 +80,10 @@ DB.onReady(async function () {
   if (prefs.active_tab) switchTab(prefs.active_tab, false);
   if (prefs.tracker_theme) {
     document.getElementById('tab-tracker').setAttribute('data-theme', prefs.tracker_theme);
-    document.getElementById('togLbl').textContent = prefs.tracker_theme === 'dark' ? 'Dark' : 'Light';
+    var desktopBtn = document.getElementById('nav-theme-toggle');
+    if (desktopBtn) desktopBtn.textContent = prefs.tracker_theme === 'dark' ? '☀️' : '🌙';
+    var mobileBtn = document.getElementById('mobile-theme-toggle');
+    if (mobileBtn) mobileBtn.innerHTML = '<span class="nav-icon">' + (prefs.tracker_theme === 'dark' ? '☀️' : '🌙') + '</span> ' + (prefs.tracker_theme === 'dark' ? 'Light Mode' : 'Dark Mode');
   }
   initTodo();
   await initProgress();
@@ -186,7 +212,9 @@ async function initProgress() {
   let chart;
 
   function chartCommonOptions() {
-    return { responsive: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Syne', size: 13, weight: '700' }, bodyFont: { family: 'DM Mono', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { color: '#1e1e2a' }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'DM Mono', size: 11, weight: 'bold' } }, border: { color: '#2a2a38' } }, y: { min: 0, grid: { color: '#1e1e2a' }, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: 11 }, callback: v => v + '%' }, border: { color: '#2a2a38' } } } };
+    var isMobile = window.innerWidth <= 640;
+    var tickSize = isMobile ? 9 : 11;
+    return { responsive: true, maintainAspectRatio: true, animation: { duration: 500, easing: 'easeInOutQuart' }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#16161f', borderColor: '#c8ff00', borderWidth: 1, titleColor: '#c8ff00', bodyColor: '#f0f0f5', titleFont: { family: 'Syne', size: 13, weight: '700' }, bodyFont: { family: 'DM Mono', size: 12 }, padding: 12, callbacks: { label: c => ' ' + c.parsed.y + '%' } } }, scales: { x: { grid: { color: '#1e1e2a' }, ticks: { color: function (c) { return WEEK_COLORS[c.index % WEEK_COLORS.length]; }, font: { family: 'DM Mono', size: tickSize, weight: 'bold' }, maxRotation: 45, minRotation: 0, autoSkip: true, autoSkipPadding: 4 }, border: { color: '#2a2a38' } }, y: { min: 0, grid: { color: '#1e1e2a' }, ticks: { color: '#6b6b80', font: { family: 'DM Mono', size: tickSize }, callback: v => v + '%' }, border: { color: '#2a2a38' } } } };
   }
 
   function buildChart(type) {
@@ -194,7 +222,7 @@ async function initProgress() {
     if (type === 'line') {
       dataset = { label: 'Progress (%)', data: [], borderColor: PASS_COLOR, backgroundColor: 'rgba(39,174,96,0.12)', borderWidth: 2.5, pointBackgroundColor: PASS_COLOR, pointBorderColor: '#0a0a0f', pointBorderWidth: 2, pointRadius: 6, pointHoverRadius: 9, fill: true, tension: .35 };
     } else {
-      dataset = { label: 'Progress (%)', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 4, maxBarThickness: 56 };
+      dataset = { label: 'Progress (%)', data: [], backgroundColor: [], borderColor: [], borderWidth: 1, borderRadius: 4, maxBarThickness: window.innerWidth <= 640 ? 28 : 56 };
     }
     return new Chart(ctx, { type, data: { labels: [], datasets: [dataset] }, options: chartCommonOptions() });
   }
@@ -749,14 +777,7 @@ async function initTracker() {
     const k = getSundayOf(currentOffset), d = await DB.loadWeek(k); d.manualRating = null; await DB.saveWeek(k, d);
     document.getElementById('manualInput').value = ''; render();
   });
-  const trackerEl = document.getElementById('tab-tracker');
-  document.getElementById('togBtn').addEventListener('click', () => {
-    const next = trackerEl.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    trackerEl.setAttribute('data-theme', next);
-    document.getElementById('togLbl').textContent = next === 'dark' ? 'Dark' : 'Light';
-    DB.savePrefs({ active_tab: document.querySelector('.nav-tab.active')?.dataset.tab || 'todo', tracker_theme: next });
-    render();
-  });
+  // Theme toggle is now global (toggleGlobalTheme)
   render();
 
   async function syncToProgress() {
@@ -812,6 +833,14 @@ async function initRanker() {
   window.rankerSavePrompt = async function (val) {
     customPrompt = val || '';
     await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+  };
+
+  window.rankerSavePromptBtn = async function () {
+    var input = document.getElementById('ranking-prompt-input');
+    customPrompt = input ? input.value || '' : '';
+    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+    var btn = document.getElementById('btn-save-prompt');
+    if (btn) { btn.textContent = 'Saved ✓'; btn.classList.add('saved'); setTimeout(function () { btn.textContent = 'Save Prompt'; btn.classList.remove('saved'); }, 2000); }
   };
 
   window.rankerSaveApiKey = async function () {
@@ -1139,6 +1168,8 @@ async function initLogbook() {
   function renderTaskNode(t, proj) { const st = calcStatus(t); const hasChildren = t.children && t.children.length > 0; const pct = hasChildren ? taskPct(t) : 0; const open = S.open[t.id] || {}; const isArmed = S._pendingDel === t.id; const toggle = h('div', { className: 'lb-expand-toggle' + (hasChildren ? (t.expanded ? ' expanded' : '') : ' hidden'), onClick: ev => { ev.stopPropagation(); if (hasChildren) { t.expanded = !t.expanded; save(); render(); } } }, '▶'); const line = h('div', { className: 'lb-status-line', style: { background: statusColor(st, pct) } }); let checkContent = ''; if (st === 'done') checkContent = '✓'; else if (st === 'ip') checkContent = '◑'; const check = h('div', { className: 'lb-task-check' + (st === 'done' ? ' done' : st === 'ip' ? ' ip' : ''), style: st === 'ip' ? { borderColor: statusColor(st, pct), color: statusColor(st, pct) } : {}, onClick: ev => { ev.stopPropagation(); toggleTask(proj.id, t.id); } }, checkContent); const body = h('div', { className: 'lb-task-body' }, h('div', { className: 'lb-task-title' + (t.done ? ' completed' : '') }, t.title), hasChildren ? h('div', { className: 'lb-task-sub-info' }, h('div', { className: 'lb-mini-bar-wrap' }, h('div', { className: 'lb-mini-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-mini-pct' }, pct + '%')) : null); const ts = t.completedAt ? h('div', { className: 'lb-task-ts' }, fmtFull(t.completedAt)) : null; const notesBadge = t.notes ? h('div', { className: 'badge', style: { background: 'var(--lb-amber)' } }) : null; const linksBadge = t.links && t.links.length ? h('div', { className: 'badge', style: { background: 'var(--lb-blue)' } }) : null; const actions = h('div', { className: 'lb-task-actions' + (isArmed ? ' force-show' : '') }, h('button', { className: 'lb-act-btn', title: 'Rename', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, renaming: !open.renaming, notes: false, links: false, addChild: false }; render(); } }, '✏️'), h('button', { className: 'lb-act-btn', title: 'Notes', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, notes: !open.notes, links: false, addChild: false, renaming: false }; render(); } }, '📝', notesBadge), h('button', { className: 'lb-act-btn', title: 'Links', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, links: !open.links, notes: false, addChild: false, renaming: false }; render(); } }, '🔗', linksBadge), h('button', { className: 'lb-act-btn', title: 'Add subtask', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, addChild: !open.addChild, notes: false, links: false, renaming: false }; render(); } }, '+'), h('button', { className: 'lb-act-btn' + (isArmed ? ' del-armed' : ''), title: 'Delete', onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelTimer); S._pendingDel = null; deleteTask(proj.id, t.id); return; } S._pendingDel = t.id; render(); S._pendingDelTimer = setTimeout(() => { S._pendingDel = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); const row = h('div', { className: 'lb-task-row' }, toggle, line, check, body, ts, actions); const node = h('div', { className: 'lb-task-node' }, row); if (open.renaming) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { value: t.title, onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], renaming: false }; renameTask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], renaming: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => { inp.focus(); inp.select(); }); } if (open.notes) { const panel = h('div', { className: 'lb-notes-panel' }); const autoGrow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }; const ta = h('textarea', { placeholder: 'Add notes…', onInput: ev => { updateNotes(proj.id, t.id, ev.target.value); autoGrow(ev.target); } }); ta.value = t.notes || ''; panel.appendChild(ta); node.appendChild(panel); requestAnimationFrame(() => { autoGrow(ta); ta.focus(); }); } if (open.links) { const panel = h('div', { className: 'lb-links-panel' }); const inputsWrap = h('div', { className: 'lb-link-inputs' }); const nameRow = h('div', { className: 'lb-link-input-row' }); const nameInp = h('input', { placeholder: 'Link name (optional)…' }); nameRow.append(nameInp); const urlRow = h('div', { className: 'lb-link-input-row' }); const urlInp = h('input', { placeholder: 'Paste URL…', onKeydown: ev => { if (ev.key === 'Enter' && urlInp.value.trim()) { addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } } }); const addBtn = h('button', { onClick: () => { if (urlInp.value.trim()) addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } }, 'Add'); urlRow.append(urlInp, addBtn); inputsWrap.append(nameRow, urlRow); panel.appendChild(inputsWrap); (t.links || []).forEach(l => { panel.appendChild(h('div', { className: 'lb-link-item' }, h('span', { className: 'lb-link-badge ' + l.type }, l.type === 'yt' ? 'YT' : l.type === 'gpt' ? 'GPT' : l.type === 'claude' ? 'Claude' : 'Link'), h('a', { className: 'lb-link-url', href: l.url, target: '_blank', rel: 'noopener' }, l.label), h('span', { className: 'lb-link-del', onClick: () => removeLink(proj.id, t.id, l.id) }, '✕'))); }); node.appendChild(panel); requestAnimationFrame(() => nameInp.focus()); } if (open.addChild) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { placeholder: 'Subtask name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], addChild: false }; createSubtask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], addChild: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } if (hasChildren && t.expanded) { const childWrap = h('div', { className: 'lb-task-children' }); t.children.forEach(c => childWrap.appendChild(renderTaskNode(c, proj))); node.appendChild(childWrap); } return node; }
 
   function render() {
+    // On mobile, force 'active' tab since tabs are hidden
+    if (window.innerWidth <= 640 && S.tab !== 'active') S.tab = 'active';
     renderTabs(); renderSidebarContent(); renderSidebarFooter(); renderMain();
     // Mobile: add dropdown toggle for project list
     if (window.innerWidth <= 640) {

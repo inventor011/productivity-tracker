@@ -130,9 +130,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-progress .chart-card.fail::before{background:var(--fail)}
 #tab-progress .chart-card.pass .stat-val{color:var(--pass)}
 #tab-progress .chart-card.fail .stat-val{color:var(--fail)}
-#tab-progress .chart-status{margin-top:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
-#tab-progress .chart-status.pass{color:var(--pass)}
-#tab-progress .chart-status.fail{color:var(--fail)}
+#tab-progress .chart-status{display:none}
 #tab-progress .pass-input{width:76px!important;background:var(--input-bg);border:1px solid var(--border);border-radius:2px;color:inherit;font-family:'Syne',sans-serif;font-size:22px;font-weight:700;text-align:right;padding:4px 8px;outline:none}
 #tab-progress .pass-input:focus{border-color:currentColor}
 
@@ -284,7 +282,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-ranker .container{max-width:860px;margin:0 auto;padding:48px 24px 80px;position:relative;z-index:1}
 #tab-ranker header{margin-bottom:48px;border-bottom:1px solid var(--border);padding-bottom:28px}
 #tab-ranker .header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
-#tab-ranker h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,42px);letter-spacing:-1px;color:var(--text);line-height:1.05}
+#tab-ranker h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(28px,5vw,42px);letter-spacing:-1px;color:var(--text);line-height:1.05;white-space:nowrap}
 #tab-ranker h1 span{color:var(--accent)}
 #tab-ranker .subtitle{font-size:11px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:6px}
 #tab-ranker .status-bar{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:11px;color:var(--muted)}
@@ -292,7 +290,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-ranker .dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0}
 #tab-ranker .dot.live{background:var(--green);box-shadow:0 0 6px var(--green);animation:ranker-pulse 2s ease-in-out infinite}
 @keyframes ranker-pulse{0%,100%{opacity:1}50%{opacity:.4}}
-#tab-ranker #next-run-display{font-size:11px;color:var(--muted)}
+#tab-ranker #next-run-display{display:none}
 #tab-ranker .api-section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-bottom:32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 #tab-ranker .api-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap;flex-shrink:0}
 #tab-ranker #api-key-input{flex:1;min-width:200px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;letter-spacing:.05em}
@@ -310,6 +308,9 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-ranker #ranking-prompt-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;resize:vertical;line-height:1.5;min-height:60px}
 #tab-ranker #ranking-prompt-input:focus{border-color:var(--accent)}
 #tab-ranker #ranking-prompt-input::placeholder{color:var(--muted);font-size:11px}
+#tab-ranker .btn-save-prompt{margin-top:8px;background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 18px;border-radius:6px;cursor:pointer;transition:background .2s}
+#tab-ranker .btn-save-prompt:hover{background:var(--accent-glow)}
+#tab-ranker .btn-save-prompt.saved{border-color:var(--green);color:var(--green);pointer-events:none}
 #tab-ranker .add-section{margin-bottom:40px}
 #tab-ranker .section-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
 #tab-ranker .add-row{display:flex;gap:10px}
@@ -358,12 +359,6 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-ranker #ranker-toast.success{border-color:var(--green);color:var(--green)}
 #tab-ranker #ranker-toast.error{border-color:var(--red);color:var(--red)}
 #tab-ranker #ranker-toast.info{border-color:var(--accent);color:var(--accent)}
-#tab-ranker .log-section{margin-top:48px;padding-top:24px;border-top:1px solid var(--border)}
-#tab-ranker #eval-log{margin-top:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:11px;color:var(--muted);line-height:1.8;max-height:160px;overflow-y:auto;letter-spacing:.03em}
-#tab-ranker #eval-log p{margin:0}
-#tab-ranker #eval-log p.ok{color:var(--green)}
-#tab-ranker #eval-log p.err{color:var(--red)}
-#tab-ranker #eval-log p.accent{color:var(--accent)}
 
 /* TAB 5 — STREAK */
 #tab-streak{--bg:#0d0d0d;--surface:#141414;--surface2:#1c1c1c;--border:#2a2a2a;--accent:#e8a020;--accent-dim:#7a5010;--success:#3ecf6c;--danger:#e84040;--text:#e8e0d0;--text-muted:#5a5550;--text-mid:#9a9088;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100%;padding:0 0 80px}
@@ -589,6 +584,8 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .nav-email{font-family:'DM Mono',monospace;font-size:11px;color:#555;letter-spacing:.04em;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-logout{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#444;background:transparent;border:1px solid #2a2a2a;border-radius:4px;padding:4px 10px;cursor:pointer;transition:color .2s,border-color .2s}
 .nav-logout:hover{color:#e07070;border-color:#e07070}
+.nav-theme-toggle{font-size:16px;background:transparent;border:1px solid #2a2a2a;border-radius:4px;padding:3px 8px;cursor:pointer;transition:border-color .2s,background .2s;line-height:1}
+.nav-theme-toggle:hover{border-color:#d4a85a;background:#1a1a1a}
 
 /* Repair overrides: keep long user-entered text vertical instead of widening rows. */
 #tab-todo .task-item{align-items:flex-start}
@@ -767,11 +764,12 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-progress .chart-card{padding:16px 12px;margin-bottom:16px}
   #tab-progress .chart-header{flex-direction:column;gap:8px}
   #tab-progress .chart-title{font-size:14px}
-  #tab-progress .chart-stats{flex-direction:column;gap:8px}
-  #tab-progress .stat{text-align:left;display:flex;align-items:center;gap:8px}
-  #tab-progress .stat-val{font-size:16px}
-  #tab-progress .stat-lbl{font-size:9px}
-  #tab-progress .pass-input{width:50px!important;font-size:16px}
+  #tab-progress .chart-status{display:none}
+  #tab-progress .chart-stats{flex-direction:row;gap:10px;flex-wrap:nowrap}
+  #tab-progress .stat{text-align:left;display:flex;align-items:center;gap:4px;flex:1}
+  #tab-progress .stat-val{font-size:14px}
+  #tab-progress .stat-lbl{font-size:8px}
+  #tab-progress .pass-input{width:44px!important;font-size:14px;padding:2px 4px!important}
   #tab-progress canvas#prog-chart{max-height:180px}
   #tab-progress .controls{gap:6px;flex-direction:column}
   #tab-progress .btn{font-size:11px;padding:8px 14px;width:100%;text-align:center;justify-content:center}
@@ -784,11 +782,10 @@ body{background:#080808;font-family:'DM Mono',monospace}
   /* --- RANKER --- */
   #tab-ranker .container{padding:20px 12px 80px}
   #tab-ranker header{margin-bottom:16px;padding-bottom:12px}
-  #tab-ranker h1{font-size:22px}
+  #tab-ranker h1{font-size:22px;white-space:nowrap}
   #tab-ranker .header-top{flex-direction:column;gap:6px}
   #tab-ranker .status-bar{align-items:flex-start;gap:4px;flex-direction:row;flex-wrap:wrap}
   #tab-ranker .status-pill{font-size:10px;padding:4px 10px}
-  #tab-ranker #next-run-display{font-size:10px}
   #tab-ranker .api-section{flex-direction:column;padding:12px 14px;margin-bottom:16px;gap:8px}
   #tab-ranker .api-label{font-size:9px;width:auto}
   #tab-ranker .api-key-input-wrap{flex-direction:row;width:100%}
@@ -799,6 +796,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-ranker .btn-change-key{font-size:10px;padding:5px 12px}
   #tab-ranker .prompt-section{margin-bottom:16px}
   #tab-ranker #ranking-prompt-input{font-size:11px;padding:10px 12px;min-height:50px}
+  #tab-ranker .btn-save-prompt{font-size:10px;padding:6px 14px}
   #tab-ranker .add-section{margin-bottom:16px}
   #tab-ranker .add-row{flex-direction:column;gap:8px}
   #tab-ranker #question-input{font-size:12px;padding:10px 14px}
@@ -808,8 +806,6 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-ranker .score-badge{width:34px;height:34px;font-size:14px}
   #tab-ranker .question-text{font-size:12px}
   #tab-ranker .question-reason{font-size:10px}
-  #tab-ranker .log-section{margin-top:20px;padding-top:12px}
-  #tab-ranker #eval-log{font-size:10px;padding:10px 12px;max-height:120px}
 
   /* --- STREAK --- */
   #tab-streak header{padding:16px 12px 12px;flex-wrap:wrap;gap:8px}
@@ -842,25 +838,26 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-streak .confirm-box h3{font-size:1.1rem}
   #tab-streak .confirm-box p{font-size:.7rem}
 
-  /* --- LOGBOOK (dropdown project selector) --- */
+  /* --- LOGBOOK (simplified mobile — no tabs, projects only) --- */
   #tab-logbook .lb-app{flex-direction:column;height:auto;min-height:calc(100vh - 46px)}
   #tab-logbook .lb-sidebar{width:100%;min-width:100%;max-height:none;height:auto;border-right:none;border-bottom:1px solid #1e1e1e;flex-shrink:0}
-  #tab-logbook .lb-tabs{border-bottom:1px solid #1e1e1e}
-  #tab-logbook .lb-tab{padding:10px 0;font-size:11px}
+  #tab-logbook .lb-tabs{display:none}
   #tab-logbook .lb-sidebar-content{max-height:none;overflow-y:visible;padding:4px 0}
   /* Collapsed by default, shown when toggled */
   #tab-logbook .lb-sidebar-content.mobile-collapsed{max-height:0;overflow:hidden;padding:0}
   #tab-logbook .lb-sidebar-content.mobile-expanded{max-height:50vh;overflow-y:auto;padding:4px 0}
   #tab-logbook .lb-proj-row{padding:8px 12px}
   #tab-logbook .lb-proj-title{font-size:12px}
+  #tab-logbook .lb-proj-pct{font-size:10px}
+  #tab-logbook .lb-proj-del{opacity:1;font-size:10px}
   #tab-logbook .lb-main{padding:16px 12px;height:auto;overflow:visible}
-  #tab-logbook .lb-proj-header{margin-bottom:20px}
+  #tab-logbook .lb-proj-header{margin-bottom:16px}
   #tab-logbook .lb-proj-header h1{font-size:18px}
   #tab-logbook .lb-proj-header .meta{font-size:10px}
   #tab-logbook .lb-task-row{padding:6px 4px;gap:4px}
   #tab-logbook .lb-task-title{font-size:12px}
   #tab-logbook .lb-task-actions{opacity:1}
-  #tab-logbook .lb-proj-del{opacity:1}
+  #tab-logbook .lb-task-actions .lb-act-btn{font-size:10px;padding:3px 4px}
   #tab-logbook .lb-notes-panel{padding:6px 6px 6px 20px}
   #tab-logbook .lb-links-panel{padding:6px 6px 6px 20px}
   #tab-logbook .lb-task-children{padding-left:16px}
