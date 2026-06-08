@@ -199,9 +199,10 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-tracker .panel-date{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text3);margin-top:2px}
 #tab-tracker .day-avg-chip{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700;padding:5px 14px;border-radius:20px;background:var(--accent-soft);color:var(--accent)}
 #tab-tracker .add-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
-#tab-tracker .add-row input[type="text"]{flex:1;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;font-family:'Syne',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s}
-#tab-tracker .add-row input[type="text"]:focus{border-color:var(--accent)}
-#tab-tracker .add-row input[type="text"]::placeholder{color:var(--text3)}
+#tab-tracker .add-row input[type="text"],#tab-tracker .task-name-textarea{flex:1;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;font-family:'Syne',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s}
+#tab-tracker .task-name-textarea{resize:none;overflow:hidden;min-height:40px;line-height:1.4}
+#tab-tracker .add-row input[type="text"]:focus,#tab-tracker .task-name-textarea:focus{border-color:var(--accent)}
+#tab-tracker .add-row input[type="text"]::placeholder,#tab-tracker .task-name-textarea::placeholder{color:var(--text3)}
 #tab-tracker .add-row input[type="number"]{width:64px;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;padding:10px 8px;font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;color:var(--accent);text-align:center;outline:none;transition:border-color .2s;-moz-appearance:textfield}
 #tab-tracker .add-row input[type="number"]::-webkit-inner-spin-button,#tab-tracker .add-row input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
 #tab-tracker .add-row input[type="number"]:focus{border-color:var(--accent)}
@@ -621,6 +622,76 @@ body{background:#080808;font-family:'DM Mono',monospace}
 .story-modal-body hr{border:none;border-top:1px solid rgba(217,119,87,.35);margin:22px 0}
 @media(max-width:600px){.story-modal-card{padding:28px 22px 24px}.story-modal-title{font-size:26px}.story-modal-body{font-size:15.5px}}
 
+/* ===== GLOBAL LIGHT THEME ===== */
+body[data-global-theme="light"]{background:#f5f2ec}
+body[data-global-theme="light"] #app-nav,#app-nav[data-theme="light"]{background:#faf7f0;border-bottom-color:#e0d8c8}
+body[data-global-theme="light"] .nav-tab{color:#8a7e6a}
+body[data-global-theme="light"] .nav-tab:hover{color:#5a4e3a;background:#f0ead8}
+body[data-global-theme="light"] .nav-tab.active{color:#3d2a1f;background:#e8e0d0;border-color:#d0c4b0}
+body[data-global-theme="light"] .nav-brand{color:#9a8e7a}
+body[data-global-theme="light"] .nav-user{border-left-color:#e0d8c8}
+body[data-global-theme="light"] .nav-email{color:#8a7e6a}
+body[data-global-theme="light"] .nav-logout{color:#8a7e6a;border-color:#d0c4b0}
+body[data-global-theme="light"] .nav-theme-toggle{border-color:#d0c4b0;color:#5a4e3a}
+body[data-global-theme="light"] .nav-theme-toggle:hover{background:#f0ead8;border-color:#b8a888}
+body[data-global-theme="light"] .mobile-menu-btn{border-color:#d0c4b0;color:#5a4e3a}
+body[data-global-theme="light"] .mobile-menu-drawer{background:#faf7f0;border-right-color:#e0d8c8}
+body[data-global-theme="light"] .mobile-menu-header{border-bottom-color:#e0d8c8}
+body[data-global-theme="light"] .mobile-menu-close{color:#8a7e6a}
+body[data-global-theme="light"] .mobile-menu-item{color:#8a7e6a}
+body[data-global-theme="light"] .mobile-menu-item:hover,body[data-global-theme="light"] .mobile-menu-item.active{color:#3d2a1f;background:#f0ead8}
+body[data-global-theme="light"] .mobile-menu-divider{background:#e0d8c8}
+body[data-global-theme="light"] .mobile-menu-footer{border-top-color:#e0d8c8}
+
+/* To-Do light */
+body[data-global-theme="light"] #tab-todo{--bg:#f5f2ec;--surface:#fefcf7;--border:#e0d8c8;--gold:#b8621a;--gold-dim:#d4832e;--text:#3d2a1f;--muted:#8a7e6a;--done-text:#c4b8a0;--red:#b84040}
+body[data-global-theme="light"] #tab-todo::before{opacity:.02}
+
+/* Progress light */
+body[data-global-theme="light"] #tab-progress{--bg:#f5f2ec;--surface:#faf7f0;--card:#fefcf7;--border:#e0d8c8;--accent:#4a7a2a;--accent2:#6a5acd;--text:#3d2a1f;--muted:#8a7e6a;--danger:#cc3344;--input-bg:#f0ead8}
+body[data-global-theme="light"] #tab-progress::before{opacity:.02}
+body[data-global-theme="light"] #tab-progress .tag{color:#3d2a1f;border-color:#3d2a1f}
+body[data-global-theme="light"] #tab-progress h1,body[data-global-theme="light"] #tab-progress h1 span{color:#b8621a}
+body[data-global-theme="light"] #tab-progress .chart-card::before{background:linear-gradient(90deg,#4a7a2a,#6a5acd)}
+body[data-global-theme="light"] #tab-progress .chart-card{box-shadow:0 2px 12px rgba(0,0,0,.06)}
+body[data-global-theme="light"] #tab-progress .btn-primary{background:#4a7a2a;border-color:#4a7a2a;color:#fff}
+body[data-global-theme="light"] #tab-progress .btn-ghost{color:#3d2a1f;border-color:#d0c4b0}
+
+/* Ranker light */
+body[data-global-theme="light"] #tab-ranker{--bg:#f5f2ec;--surface:#fefcf7;--border:#e0d8c8;--border-hover:#c4b8a0;--text:#3d2a1f;--muted:#8a7e6a;--accent:#b8621a;--accent-dim:rgba(184,98,26,.1);--accent-glow:rgba(184,98,26,.2);--green:#2e8b57;--green-dim:rgba(46,139,87,.1);--red:#cc3344;--red-dim:rgba(204,51,68,.08);--rank-high:#b8621a;--rank-mid:#4a8acc;--rank-low:#8a8e9a}
+body[data-global-theme="light"] #tab-ranker::before{opacity:.02}
+
+/* Streak light */
+body[data-global-theme="light"] #tab-streak{--bg:#f5f2ec;--surface:#fefcf7;--surface2:#f0ead8;--border:#e0d8c8;--accent:#b8621a;--accent-dim:#d4832e;--success:#2e8b57;--danger:#cc3344;--text:#3d2a1f;--text-muted:#8a7e6a;--text-mid:#6a5e4a}
+body[data-global-theme="light"] #tab-streak .badge-active{background:rgba(46,139,87,.1);color:#2e8b57}
+body[data-global-theme="light"] #tab-streak .badge-dead{background:rgba(204,51,68,.08);color:#cc3344}
+body[data-global-theme="light"] #tab-streak .streak-number{color:#2e8b57}
+body[data-global-theme="light"] #tab-streak .progress-fill{background:#2e8b57}
+body[data-global-theme="light"] #tab-streak .progress-dots .dot{border-color:#d0c4b0}
+body[data-global-theme="light"] #tab-streak .progress-dots .dot.done,body[data-global-theme="light"] #tab-streak .progress-dots .dot.done-ok{background:#2e8b57!important;border-color:#2e8b57!important}
+
+/* Logbook light */
+body[data-global-theme="light"] #tab-logbook{--lb-bg:#f5f2ec;--lb-surface:#fefcf7;--lb-surface2:#f0ead8;--lb-text:#3d2a1f;--lb-muted:#8a7e6a;--lb-faint:#b0a898;--lb-red:#cc3344;--lb-green:#2e8b57;--lb-amber:#c87820;--lb-blue:#2a6aa8}
+body[data-global-theme="light"] #tab-logbook input,body[data-global-theme="light"] #tab-logbook textarea{background:#f0ead8;border-color:#e0d8c8;color:#3d2a1f}
+body[data-global-theme="light"] #tab-logbook .lb-sidebar{border-right-color:#e0d8c8}
+body[data-global-theme="light"] #tab-logbook .lb-tabs{border-bottom-color:#e0d8c8}
+body[data-global-theme="light"] #tab-logbook .lb-proj-row:hover{background:#f0ead8}
+body[data-global-theme="light"] #tab-logbook .lb-proj-row.selected{background:#f0ead8;box-shadow:inset 3px 0 0 #cc3344}
+body[data-global-theme="light"] #tab-logbook .lb-proj-bar-wrap{background:#e0d8c8}
+body[data-global-theme="light"] #tab-logbook .lb-task-row:hover{background:#f0ead8}
+body[data-global-theme="light"] #tab-logbook .lb-task-check{border-color:#c4b8a0}
+body[data-global-theme="light"] #tab-logbook .lb-new-proj-btn{border-color:#d0c4b0;color:#8a7e6a}
+body[data-global-theme="light"] #tab-logbook .lb-new-proj-btn:hover{border-color:#cc3344;color:#cc3344}
+body[data-global-theme="light"] #tab-logbook .lb-header-bar-wrap{background:#e0d8c8}
+body[data-global-theme="light"] #tab-logbook .lb-add-task-btn{border-color:#d0c4b0;color:#8a7e6a}
+body[data-global-theme="light"] #tab-logbook .lb-add-task-btn:hover{border-color:#cc3344;color:#cc3344}
+body[data-global-theme="light"] .lb-mobile-proj-toggle{background:#f0ead8;border-bottom-color:#e0d8c8;color:#3d2a1f}
+body[data-global-theme="light"] #tab-logbook .lb-dot-menu{background:#fefcf7;border-color:#e0d8c8;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+body[data-global-theme="light"] #tab-logbook .lb-dot-menu-item:hover{background:#f0ead8}
+
+/* Footer/Story light */
+body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,transparent,rgba(245,242,236,.85))}
+
 /* ===== MOBILE MENU DRAWER (hidden on desktop) ===== */
 .mobile-menu-btn{display:none}
 .mobile-menu-drawer{display:none}
@@ -857,8 +928,15 @@ body{background:#080808;font-family:'DM Mono',monospace}
   #tab-logbook .lb-proj-header .meta{font-size:10px}
   #tab-logbook .lb-task-row{padding:6px 4px;gap:4px}
   #tab-logbook .lb-task-title{font-size:12px}
-  #tab-logbook .lb-task-actions{opacity:1}
-  #tab-logbook .lb-task-actions .lb-act-btn{font-size:10px;padding:3px 4px}
+  #tab-logbook .lb-task-actions{opacity:1;position:relative}
+  #tab-logbook .lb-task-actions .lb-act-btn{display:none}
+  #tab-logbook .lb-task-actions .lb-three-dot{display:flex!important;font-size:16px;padding:4px 6px;color:var(--lb-muted,#8a8680);cursor:pointer;border-radius:4px}
+  #tab-logbook .lb-task-actions .lb-three-dot:hover{background:var(--lb-surface2,#1b1b1b);color:var(--lb-text,#e8e4dc)}
+  #tab-logbook .lb-dot-menu{position:absolute;right:0;top:100%;background:var(--lb-surface,#141414);border:1px solid #2a2a2a;border-radius:8px;min-width:160px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;animation:lb-slideDown .15s ease}
+  #tab-logbook .lb-dot-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;font-size:12px;color:var(--lb-text,#e8e4dc);background:transparent;border:none;cursor:pointer;text-align:left;font-family:inherit;transition:background .12s}
+  #tab-logbook .lb-dot-menu-item:hover{background:var(--lb-surface2,#1b1b1b)}
+  #tab-logbook .lb-dot-menu-item.danger{color:var(--lb-red,#d63031)}
+  #tab-logbook .lb-dot-menu-item.danger:hover{background:rgba(214,48,49,.08)}
   #tab-logbook .lb-notes-panel{padding:6px 6px 6px 20px}
   #tab-logbook .lb-links-panel{padding:6px 6px 6px 20px}
   #tab-logbook .lb-task-children{padding-left:16px}

@@ -59,10 +59,14 @@ function switchTab(name, persist) {
 
 // ==================== GLOBAL THEME TOGGLE ====================
 function toggleGlobalTheme() {
-  var tracker = document.getElementById('tab-tracker');
-  var current = tracker.getAttribute('data-theme') || 'light';
+  var current = document.body.getAttribute('data-global-theme') || 'dark';
   var next = current === 'dark' ? 'light' : 'dark';
-  tracker.setAttribute('data-theme', next);
+  document.body.setAttribute('data-global-theme', next);
+  // Also sync tracker tab theme
+  document.getElementById('tab-tracker').setAttribute('data-theme', next);
+  // Update nav bar for light mode
+  var nav = document.getElementById('app-nav');
+  if (nav) nav.setAttribute('data-theme', next);
   // Update theme toggle icons
   var desktopBtn = document.getElementById('nav-theme-toggle');
   if (desktopBtn) desktopBtn.textContent = next === 'dark' ? '☀️' : '🌙';
@@ -79,7 +83,10 @@ DB.onReady(async function () {
   const prefs = await DB.loadPrefs();
   if (prefs.active_tab) switchTab(prefs.active_tab, false);
   if (prefs.tracker_theme) {
+    document.body.setAttribute('data-global-theme', prefs.tracker_theme);
     document.getElementById('tab-tracker').setAttribute('data-theme', prefs.tracker_theme);
+    var nav = document.getElementById('app-nav');
+    if (nav) nav.setAttribute('data-theme', prefs.tracker_theme);
     var desktopBtn = document.getElementById('nav-theme-toggle');
     if (desktopBtn) desktopBtn.textContent = prefs.tracker_theme === 'dark' ? '☀️' : '🌙';
     var mobileBtn = document.getElementById('mobile-theme-toggle');
@@ -524,7 +531,7 @@ async function initTracker() {
     const dayTasks = data.days[selDs] || [];
     const dayAvgVal = dayTasks.length ? (dayTasks.reduce((s, t) => s + t.rating, 0) / dayTasks.length).toFixed(2) : null;
     const panel = document.getElementById('dayPanel');
-    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row add-step-name" id="addStepName"><input type="text" id="taskNameIn" placeholder="Task or activity…"/><input type="number" id="taskRatingIn" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="add-row add-step-rating" id="addStepRating" style="display:none"><div class="step-rating-label" id="stepRatingLabel"></div><input type="number" id="taskRatingIn2" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskDoneBtn">Done</button><button class="add-btn step-cancel-btn" id="addTaskCancelBtn">Cancel</button></div><div class="task-list" id="taskListEl"></div>';
+    panel.innerHTML = '<div class="panel-header"><div><div class="panel-dayname">' + DAYS_LONG[selectedDayIdx] + '</div><div class="panel-date">' + fmt(selDate) + (selDs === todayStr ? ' · Today' : '') + '</div></div>' + (dayAvgVal ? '<div class="day-avg-chip">Avg: ' + dayAvgVal + '</div>' : '') + '</div><div class="add-row add-step-name" id="addStepName"><textarea id="taskNameIn" rows="1" placeholder="Task or activity…" class="task-name-textarea"></textarea><input type="number" id="taskRatingIn" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskBtn">+ Add</button></div><div class="add-row add-step-rating" id="addStepRating" style="display:none"><div class="step-rating-label" id="stepRatingLabel"></div><input type="number" id="taskRatingIn2" placeholder="1.0" step="0.1" min="0" max="2" title="Rating (0–2)"/><button class="add-btn" id="addTaskDoneBtn">Done</button><button class="add-btn step-cancel-btn" id="addTaskCancelBtn">Cancel</button></div><div class="task-list" id="taskListEl"></div>';
     const taskListEl = document.getElementById('taskListEl');
     if (!dayTasks.length) { taskListEl.innerHTML = '<div class="empty-day"><div class="emo">📝</div>No tasks for this day yet.</div>'; }
     else {
@@ -550,7 +557,10 @@ async function initTracker() {
     }
     var isMobile = window.innerWidth <= 640;
     document.getElementById('addTaskBtn').addEventListener('click', isMobile ? mobileStepNext : addTask);
-    document.getElementById('taskNameIn').addEventListener('keydown', e => { if (e.key === 'Enter') { if (isMobile) { mobileStepNext(); } else { var r = document.getElementById('taskRatingIn'); if (!r.value) { r.focus(); } else { addTask(); } } } });
+    // Auto-grow textarea
+    var taskNameIn = document.getElementById('taskNameIn');
+    taskNameIn.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+    taskNameIn.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (isMobile) { mobileStepNext(); } else { var r = document.getElementById('taskRatingIn'); if (!r.value) { r.focus(); } else { addTask(); } } } });
     document.getElementById('taskRatingIn').addEventListener('keydown', e => { if (e.key === 'Enter') addTask(); });
 
     function mobileStepNext() {
@@ -1086,6 +1096,8 @@ async function initLogbook() {
 
   async function save() { await DB.saveLogbook({ projects: S.projects, log: S.log, activeId: S.activeId }); }
 
+  function closeAllDotMenus() { document.querySelectorAll('.lb-dot-menu').forEach(function(m) { m.remove(); }); }
+
   function calcStatus(t) { if (!t.children || !t.children.length) return t.done ? 'done' : 'ns'; const ss = t.children.map(calcStatus); if (ss.every(s => s === 'done')) return 'done'; if (ss.some(s => s === 'done' || s === 'ip')) return 'ip'; return 'ns'; }
   function projStatus(p) { if (!p.children || !p.children.length) return 'ns'; const ss = p.children.map(calcStatus); if (ss.every(s => s === 'done')) return 'done'; if (ss.some(s => s === 'done' || s === 'ip')) return 'ip'; return 'ns'; }
   function countLeaves(t) { let d = 0, a = 0; (function walk(n) { if (!n.children || !n.children.length) { a++; if (n.done) d++; } else n.children.forEach(walk); })(t); return { d, a }; }
@@ -1165,7 +1177,24 @@ async function initLogbook() {
   function renderSidebarContent() { const el = document.getElementById('lb-sidebar-content'); el.innerHTML = ''; if (S.tab === 'active') { const active = S.projects.filter(p => projPct(p) < 100); if (!active.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No active projects')); return; } active.forEach(p => { const pct = projPct(p); const st = projStatus(p); const isArmed = S._pendingDelProj === p.id; const row = h('div', { className: 'lb-proj-row' + (S.activeId === p.id ? ' selected' : ''), onClick: () => { S.activeId = p.id; if (window.innerWidth <= 640) S._mobileProjectsOpen = false; save(); render(); } }, h('div', { className: 'lb-proj-dot', style: { background: statusColor(st, pct) } }), h('div', { className: 'lb-proj-info' }, h('div', { className: 'lb-proj-title' }, p.title), h('div', { className: 'lb-proj-bar-wrap' }, h('div', { className: 'lb-proj-bar', style: { width: pct + '%', background: statusColor(st, pct) } }))), h('div', { className: 'lb-proj-pct' }, pct + '%'), h('div', { className: 'lb-proj-del' + (isArmed ? ' armed' : ''), onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelProjTimer); S._pendingDelProj = null; deleteProject(p.id); return; } S._pendingDelProj = p.id; render(); S._pendingDelProjTimer = setTimeout(() => { S._pendingDelProj = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); el.appendChild(row); }); } else if (S.tab === 'done') { const done = S.projects.filter(p => projPct(p) >= 100); if (!done.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No completed projects')); return; } done.forEach(p => { el.appendChild(h('div', { className: 'lb-done-row', style: { cursor: 'pointer' }, onClick: () => { S.activeId = p.id; S.tab = 'active'; save(); render(); } }, h('div', { className: 'lb-done-title' }, p.title), h('div', { className: 'lb-done-ts' }, p.completedAt ? fmtFull(p.completedAt) : ''))); }); } else { if (!S.log.length) { el.appendChild(h('div', { className: 'lb-sidebar-empty' }, 'No activity yet')); return; } S.log.forEach(e => { el.appendChild(h('div', { className: 'lb-log-entry' }, h('div', { className: 'lb-log-dot', style: { background: logColor(e.action) } }), h('div', { className: 'lb-log-body' }, h('div', { className: 'lb-log-desc' }, ...logDesc(e)), h('div', { className: 'lb-log-ts' }, fmtFull(e.ts))))); }); } }
   function renderSidebarFooter() { const el = document.getElementById('lb-sidebar-footer'); el.innerHTML = ''; if (S._addingProject) { const wrap = h('div', { className: 'lb-add-proj-row' }); const inp = h('input', { placeholder: 'Project name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } if (ev.key === 'Escape') { S._addingProject = false; render(); } } }); const btn = h('button', { onClick: () => { if (inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } } }, 'Add'); wrap.append(inp, btn); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-new-proj-btn', onClick: () => { S._addingProject = true; render(); } }, '+ New Project')); } }
   function renderMain() { const el = document.getElementById('lb-main'); el.innerHTML = ''; const p = activeProj(); if (!p) { el.appendChild(h('div', { className: 'lb-empty-state' }, h('div', { className: 'icon' }, '📋'), h('p', {}, 'Select or create a project'))); return; } const pct = projPct(p); const st = projStatus(p); const stLabel = st === 'done' ? 'Completed' : st === 'ip' ? 'In Progress' : 'Not Started'; const header = h('div', { className: 'lb-proj-header' }, h('h1', { style: { cursor: 'pointer' }, title: 'Double-click to rename', onDblclick: function () { var newName = prompt('Rename project:', p.title); if (newName && newName.trim()) renameProject(p.id, newName.trim()); } }, p.title), h('div', { className: 'meta lb-project-summary' }, ...projectSummaryDates(p)), h('div', { className: 'lb-header-bar-wrap' }, h('div', { className: 'lb-header-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-header-row' }, h('div', { className: 'lb-header-pct', style: { color: statusColor(st, pct) } }, pct + '%'), h('div', { className: 'lb-status-badge ' + st, style: st === 'ip' ? { background: pct >= 50 ? 'rgba(39,174,96,.12)' : 'rgba(230,126,34,.12)', color: statusColor(st, pct) } : {} }, stLabel))); el.appendChild(header); if (S.addingTop) { const wrap = h('div', { className: 'lb-add-top-input' }); const inp = h('input', { placeholder: 'Task name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.addingTop = false; createTask(p.id, inp.value.trim()); } if (ev.key === 'Escape') { S.addingTop = false; render(); } } }); wrap.appendChild(inp); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-add-task-btn', onClick: () => { S.addingTop = true; render(); } }, '+ Add task')); } const tree = h('div', {}); p.children.forEach(t => tree.appendChild(renderTaskNode(t, p))); el.appendChild(tree); }
-  function renderTaskNode(t, proj) { const st = calcStatus(t); const hasChildren = t.children && t.children.length > 0; const pct = hasChildren ? taskPct(t) : 0; const open = S.open[t.id] || {}; const isArmed = S._pendingDel === t.id; const toggle = h('div', { className: 'lb-expand-toggle' + (hasChildren ? (t.expanded ? ' expanded' : '') : ' hidden'), onClick: ev => { ev.stopPropagation(); if (hasChildren) { t.expanded = !t.expanded; save(); render(); } } }, '▶'); const line = h('div', { className: 'lb-status-line', style: { background: statusColor(st, pct) } }); let checkContent = ''; if (st === 'done') checkContent = '✓'; else if (st === 'ip') checkContent = '◑'; const check = h('div', { className: 'lb-task-check' + (st === 'done' ? ' done' : st === 'ip' ? ' ip' : ''), style: st === 'ip' ? { borderColor: statusColor(st, pct), color: statusColor(st, pct) } : {}, onClick: ev => { ev.stopPropagation(); toggleTask(proj.id, t.id); } }, checkContent); const body = h('div', { className: 'lb-task-body' }, h('div', { className: 'lb-task-title' + (t.done ? ' completed' : '') }, t.title), hasChildren ? h('div', { className: 'lb-task-sub-info' }, h('div', { className: 'lb-mini-bar-wrap' }, h('div', { className: 'lb-mini-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-mini-pct' }, pct + '%')) : null); const ts = t.completedAt ? h('div', { className: 'lb-task-ts' }, fmtFull(t.completedAt)) : null; const notesBadge = t.notes ? h('div', { className: 'badge', style: { background: 'var(--lb-amber)' } }) : null; const linksBadge = t.links && t.links.length ? h('div', { className: 'badge', style: { background: 'var(--lb-blue)' } }) : null; const actions = h('div', { className: 'lb-task-actions' + (isArmed ? ' force-show' : '') }, h('button', { className: 'lb-act-btn', title: 'Rename', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, renaming: !open.renaming, notes: false, links: false, addChild: false }; render(); } }, '✏️'), h('button', { className: 'lb-act-btn', title: 'Notes', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, notes: !open.notes, links: false, addChild: false, renaming: false }; render(); } }, '📝', notesBadge), h('button', { className: 'lb-act-btn', title: 'Links', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, links: !open.links, notes: false, addChild: false, renaming: false }; render(); } }, '🔗', linksBadge), h('button', { className: 'lb-act-btn', title: 'Add subtask', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, addChild: !open.addChild, notes: false, links: false, renaming: false }; render(); } }, '+'), h('button', { className: 'lb-act-btn' + (isArmed ? ' del-armed' : ''), title: 'Delete', onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelTimer); S._pendingDel = null; deleteTask(proj.id, t.id); return; } S._pendingDel = t.id; render(); S._pendingDelTimer = setTimeout(() => { S._pendingDel = null; render(); }, 3000); } }, isArmed ? '?' : '✕')); const row = h('div', { className: 'lb-task-row' }, toggle, line, check, body, ts, actions); const node = h('div', { className: 'lb-task-node' }, row); if (open.renaming) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { value: t.title, onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], renaming: false }; renameTask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], renaming: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => { inp.focus(); inp.select(); }); } if (open.notes) { const panel = h('div', { className: 'lb-notes-panel' }); const autoGrow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }; const ta = h('textarea', { placeholder: 'Add notes…', onInput: ev => { updateNotes(proj.id, t.id, ev.target.value); autoGrow(ev.target); } }); ta.value = t.notes || ''; panel.appendChild(ta); node.appendChild(panel); requestAnimationFrame(() => { autoGrow(ta); ta.focus(); }); } if (open.links) { const panel = h('div', { className: 'lb-links-panel' }); const inputsWrap = h('div', { className: 'lb-link-inputs' }); const nameRow = h('div', { className: 'lb-link-input-row' }); const nameInp = h('input', { placeholder: 'Link name (optional)…' }); nameRow.append(nameInp); const urlRow = h('div', { className: 'lb-link-input-row' }); const urlInp = h('input', { placeholder: 'Paste URL…', onKeydown: ev => { if (ev.key === 'Enter' && urlInp.value.trim()) { addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } } }); const addBtn = h('button', { onClick: () => { if (urlInp.value.trim()) addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } }, 'Add'); urlRow.append(urlInp, addBtn); inputsWrap.append(nameRow, urlRow); panel.appendChild(inputsWrap); (t.links || []).forEach(l => { panel.appendChild(h('div', { className: 'lb-link-item' }, h('span', { className: 'lb-link-badge ' + l.type }, l.type === 'yt' ? 'YT' : l.type === 'gpt' ? 'GPT' : l.type === 'claude' ? 'Claude' : 'Link'), h('a', { className: 'lb-link-url', href: l.url, target: '_blank', rel: 'noopener' }, l.label), h('span', { className: 'lb-link-del', onClick: () => removeLink(proj.id, t.id, l.id) }, '✕'))); }); node.appendChild(panel); requestAnimationFrame(() => nameInp.focus()); } if (open.addChild) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { placeholder: 'Subtask name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], addChild: false }; createSubtask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], addChild: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } if (hasChildren && t.expanded) { const childWrap = h('div', { className: 'lb-task-children' }); t.children.forEach(c => childWrap.appendChild(renderTaskNode(c, proj))); node.appendChild(childWrap); } return node; }
+  function renderTaskNode(t, proj) { const st = calcStatus(t); const hasChildren = t.children && t.children.length > 0; const pct = hasChildren ? taskPct(t) : 0; const open = S.open[t.id] || {}; const isArmed = S._pendingDel === t.id; const toggle = h('div', { className: 'lb-expand-toggle' + (hasChildren ? (t.expanded ? ' expanded' : '') : ' hidden'), onClick: ev => { ev.stopPropagation(); if (hasChildren) { t.expanded = !t.expanded; save(); render(); } } }, '▶'); const line = h('div', { className: 'lb-status-line', style: { background: statusColor(st, pct) } }); let checkContent = ''; if (st === 'done') checkContent = '✓'; else if (st === 'ip') checkContent = '◑'; const check = h('div', { className: 'lb-task-check' + (st === 'done' ? ' done' : st === 'ip' ? ' ip' : ''), style: st === 'ip' ? { borderColor: statusColor(st, pct), color: statusColor(st, pct) } : {}, onClick: ev => { ev.stopPropagation(); toggleTask(proj.id, t.id); } }, checkContent); const body = h('div', { className: 'lb-task-body' }, h('div', { className: 'lb-task-title' + (t.done ? ' completed' : '') }, t.title), hasChildren ? h('div', { className: 'lb-task-sub-info' }, h('div', { className: 'lb-mini-bar-wrap' }, h('div', { className: 'lb-mini-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-mini-pct' }, pct + '%')) : null); const ts = t.completedAt ? h('div', { className: 'lb-task-ts' }, fmtFull(t.completedAt)) : null; const notesBadge = t.notes ? h('div', { className: 'badge', style: { background: 'var(--lb-amber)' } }) : null; const linksBadge = t.links && t.links.length ? h('div', { className: 'badge', style: { background: 'var(--lb-blue)' } }) : null;
+    var isMob = window.innerWidth <= 640;
+    var actions;
+    if (isMob) {
+      // Mobile: 3-dot menu
+      var threeDot = h('button', { className: 'lb-three-dot', onClick: function(ev) { ev.stopPropagation(); var menu = ev.target.closest('.lb-task-actions').querySelector('.lb-dot-menu'); if (menu) { menu.remove(); return; } closeAllDotMenus(); var m = h('div', { className: 'lb-dot-menu' },
+        h('button', { className: 'lb-dot-menu-item', onClick: function(e) { e.stopPropagation(); S.open[t.id] = { addChild: true, notes: false, links: false, renaming: false }; render(); } }, '➕ Add Subtask'),
+        h('button', { className: 'lb-dot-menu-item', onClick: function(e) { e.stopPropagation(); S.open[t.id] = { renaming: true, notes: false, links: false, addChild: false }; render(); } }, '✏️ Rename'),
+        h('button', { className: 'lb-dot-menu-item', onClick: function(e) { e.stopPropagation(); S.open[t.id] = { notes: true, links: false, addChild: false, renaming: false }; render(); } }, '📝 Add Note'),
+        h('button', { className: 'lb-dot-menu-item', onClick: function(e) { e.stopPropagation(); S.open[t.id] = { links: true, notes: false, addChild: false, renaming: false }; render(); } }, '🔗 Add Link'),
+        h('button', { className: 'lb-dot-menu-item danger', onClick: function(e) { e.stopPropagation(); deleteTask(proj.id, t.id); } }, '🗑 Delete')
+      ); ev.target.closest('.lb-task-actions').appendChild(m); } }, '⋮');
+      actions = h('div', { className: 'lb-task-actions' }, threeDot);
+    } else {
+      // Desktop: normal icon buttons
+      actions = h('div', { className: 'lb-task-actions' + (isArmed ? ' force-show' : '') }, h('button', { className: 'lb-act-btn', title: 'Rename', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, renaming: !open.renaming, notes: false, links: false, addChild: false }; render(); } }, '✏️'), h('button', { className: 'lb-act-btn', title: 'Notes', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, notes: !open.notes, links: false, addChild: false, renaming: false }; render(); } }, '📝', notesBadge), h('button', { className: 'lb-act-btn', title: 'Links', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, links: !open.links, notes: false, addChild: false, renaming: false }; render(); } }, '🔗', linksBadge), h('button', { className: 'lb-act-btn', title: 'Add subtask', onClick: ev => { ev.stopPropagation(); S.open[t.id] = { ...open, addChild: !open.addChild, notes: false, links: false, renaming: false }; render(); } }, '+'), h('button', { className: 'lb-act-btn' + (isArmed ? ' del-armed' : ''), title: 'Delete', onClick: ev => { ev.stopPropagation(); if (isArmed) { clearTimeout(S._pendingDelTimer); S._pendingDel = null; deleteTask(proj.id, t.id); return; } S._pendingDel = t.id; render(); S._pendingDelTimer = setTimeout(() => { S._pendingDel = null; render(); }, 3000); } }, isArmed ? '?' : '✕'));
+    }
+    const row = h('div', { className: 'lb-task-row' }, toggle, line, check, body, ts, actions); const node = h('div', { className: 'lb-task-node' }, row); if (open.renaming) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { value: t.title, onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], renaming: false }; renameTask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], renaming: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => { inp.focus(); inp.select(); }); } if (open.notes) { const panel = h('div', { className: 'lb-notes-panel' }); const autoGrow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }; const ta = h('textarea', { placeholder: 'Add notes…', onInput: ev => { updateNotes(proj.id, t.id, ev.target.value); autoGrow(ev.target); } }); ta.value = t.notes || ''; panel.appendChild(ta); node.appendChild(panel); requestAnimationFrame(() => { autoGrow(ta); ta.focus(); }); } if (open.links) { const panel = h('div', { className: 'lb-links-panel' }); const inputsWrap = h('div', { className: 'lb-link-inputs' }); const nameRow = h('div', { className: 'lb-link-input-row' }); const nameInp = h('input', { placeholder: 'Link name (optional)…' }); nameRow.append(nameInp); const urlRow = h('div', { className: 'lb-link-input-row' }); const urlInp = h('input', { placeholder: 'Paste URL…', onKeydown: ev => { if (ev.key === 'Enter' && urlInp.value.trim()) { addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } } }); const addBtn = h('button', { onClick: () => { if (urlInp.value.trim()) addLink(proj.id, t.id, urlInp.value.trim(), nameInp.value); } }, 'Add'); urlRow.append(urlInp, addBtn); inputsWrap.append(nameRow, urlRow); panel.appendChild(inputsWrap); (t.links || []).forEach(l => { panel.appendChild(h('div', { className: 'lb-link-item' }, h('span', { className: 'lb-link-badge ' + l.type }, l.type === 'yt' ? 'YT' : l.type === 'gpt' ? 'GPT' : l.type === 'claude' ? 'Claude' : 'Link'), h('a', { className: 'lb-link-url', href: l.url, target: '_blank', rel: 'noopener' }, l.label), h('span', { className: 'lb-link-del', onClick: () => removeLink(proj.id, t.id, l.id) }, '✕'))); }); node.appendChild(panel); requestAnimationFrame(() => nameInp.focus()); } if (open.addChild) { const wrap = h('div', { className: 'lb-add-child-wrap' }); const inp = h('input', { placeholder: 'Subtask name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.open[t.id] = { ...S.open[t.id], addChild: false }; createSubtask(proj.id, t.id, inp.value.trim()); } if (ev.key === 'Escape') { S.open[t.id] = { ...S.open[t.id], addChild: false }; render(); } } }); wrap.appendChild(inp); node.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } if (hasChildren && t.expanded) { const childWrap = h('div', { className: 'lb-task-children' }); t.children.forEach(c => childWrap.appendChild(renderTaskNode(c, proj))); node.appendChild(childWrap); } return node; }
 
   function render() {
     // On mobile, force 'active' tab since tabs are hidden
@@ -1204,6 +1233,78 @@ async function initLogbook() {
     }
   }
   document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { if (S.addingTop) { S.addingTop = false; render(); } if (S._addingProject) { S._addingProject = false; render(); } } });
+
+  // Click-outside-to-dismiss for logbook panels and dot menus
+  document.addEventListener('click', function(ev) {
+    // Close dot menus on any outside click
+    if (!ev.target.closest('.lb-dot-menu') && !ev.target.closest('.lb-three-dot')) {
+      closeAllDotMenus();
+    }
+    // Dismiss open panels (notes, links, addChild, renaming) when clicking outside
+    var logbookTab = document.getElementById('tab-logbook');
+    if (!logbookTab || logbookTab.classList.contains('hidden')) return;
+    var openIds = Object.keys(S.open);
+    for (var i = 0; i < openIds.length; i++) {
+      var tid = openIds[i];
+      var o = S.open[tid];
+      if (!o) continue;
+      var isOpen = o.notes || o.links || o.addChild || o.renaming;
+      if (!isOpen) continue;
+      // Find the task node for this task
+      var taskNode = null;
+      var allNodes = logbookTab.querySelectorAll('.lb-task-node');
+      for (var j = 0; j < allNodes.length; j++) {
+        var node = allNodes[j];
+        // Check if this node has an open panel
+        if (node.querySelector('.lb-notes-panel') || node.querySelector('.lb-links-panel') || node.querySelector('.lb-add-child-wrap')) {
+          if (ev.target.closest('.lb-task-node') === node) { taskNode = node; break; }
+          // Click was outside this task node — check for unsaved content
+          var hasContent = false;
+          if (o.notes) {
+            var ta = node.querySelector('.lb-notes-panel textarea');
+            // For notes, find the task to compare
+            var tObj = findTaskById(tid);
+            if (ta && ta.value.trim() && ta.value !== (tObj && tObj.notes || '')) hasContent = true;
+          }
+          if (o.links) {
+            var urlInp = node.querySelector('.lb-links-panel .lb-link-input-row input[placeholder*="URL"]');
+            var nameInp = node.querySelector('.lb-links-panel .lb-link-input-row input[placeholder*="name"]');
+            if ((urlInp && urlInp.value.trim()) || (nameInp && nameInp.value.trim())) hasContent = true;
+          }
+          if (o.addChild) {
+            var subInp = node.querySelector('.lb-add-child-wrap input');
+            if (subInp && subInp.value.trim()) hasContent = true;
+          }
+          if (o.renaming) {
+            var renInp = node.querySelector('.lb-add-child-wrap input');
+            if (renInp && renInp.value.trim()) hasContent = true;
+          }
+          if (hasContent) {
+            if (!confirm('You have unsaved changes. Discard?')) return;
+          }
+          S.open[tid] = { notes: false, links: false, addChild: false, renaming: false };
+          render();
+          return;
+        }
+      }
+    }
+  });
+
+  // Helper: find a task by id across all projects
+  function findTaskById(id) {
+    for (var p = 0; p < S.projects.length; p++) {
+      var found = (function walk(tasks) {
+        for (var i = 0; i < tasks.length; i++) {
+          if (tasks[i].id === id) return tasks[i];
+          if (tasks[i].children) { var r = walk(tasks[i].children); if (r) return r; }
+        }
+        return null;
+      })(S.projects[p].children || []);
+      if (found) return found;
+    }
+    return null;
+  }
+
   render();
 }
 
