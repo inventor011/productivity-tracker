@@ -57,6 +57,8 @@ function switchTab(name, persist) {
   // Show/hide "Change API Key" menu item based on tab
   var apiKeyBtn = document.getElementById('mobile-change-api-key');
   if (apiKeyBtn) apiKeyBtn.style.display = (name === 'ranker') ? '' : 'none';
+  var promptBtn = document.getElementById('mobile-change-prompt');
+  if (promptBtn) promptBtn.style.display = (name === 'ranker') ? '' : 'none';
   if (persist !== false) DB.savePrefs({ active_tab: name, tracker_theme: document.getElementById('tab-tracker').getAttribute('data-theme') || 'light' });
 }
 
@@ -850,6 +852,8 @@ async function initRanker() {
   let customPrompt = saved.customPrompt || '';
   let schedulerTimer = null;
 
+  function _saveRankerBg() { DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt }); }
+
   // --- API Key UI management ---
   function showKeySavedUI() {
     document.getElementById('api-section').style.display = 'none';
@@ -866,27 +870,37 @@ async function initRanker() {
   }
   window.rankerShowKeyInput = showKeyInputUI;
 
-  if (apiKey) {
-    showKeySavedUI();
-  }
+  if (apiKey) showKeySavedUI();
 
-  // Load custom prompt
+  // --- Prompt UI management ---
+  function showPromptSavedUI() {
+    document.getElementById('prompt-section').style.display = 'none';
+    document.getElementById('prompt-saved-section').style.display = 'flex';
+  }
+  function showPromptInputUI() {
+    document.getElementById('prompt-section').style.display = '';
+    document.getElementById('prompt-saved-section').style.display = 'none';
+    var inp = document.getElementById('ranking-prompt-input');
+    if (inp) { inp.value = customPrompt; inp.focus(); }
+  }
+  window.rankerShowPromptInput = showPromptInputUI;
+
   var promptInput = document.getElementById('ranking-prompt-input');
-  if (promptInput && customPrompt) promptInput.value = customPrompt;
+  if (promptInput && customPrompt) { promptInput.value = customPrompt; showPromptSavedUI(); }
 
   window.rankerSavePrompt = function (val) {
     customPrompt = val || '';
     _saveRankerBg();
   };
 
-  function _saveRankerBg() { DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt }); }
-
   window.rankerSavePromptBtn = function () {
     var input = document.getElementById('ranking-prompt-input');
     customPrompt = input ? input.value || '' : '';
     _saveRankerBg();
-    var btn = document.getElementById('btn-save-prompt');
-    if (btn) { btn.textContent = 'Saved ✓'; btn.classList.add('saved'); setTimeout(function () { btn.textContent = 'Save Prompt'; btn.classList.remove('saved'); }, 2000); }
+    if (customPrompt) {
+      showPromptSavedUI();
+      rankerShowToast('Prompt saved', 'success');
+    }
   };
 
   window.rankerSaveApiKey = function () {
