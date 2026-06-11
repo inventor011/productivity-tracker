@@ -270,7 +270,8 @@ async function initTodo() {
     var label = document.getElementById('notif-label');
     var status = document.getElementById('notif-status');
     var timeRow = document.getElementById('notif-time-row');
-    var timeSelect = document.getElementById('notif-time-select');
+    var hourInput = document.getElementById('notif-hour-input');
+    var ampmBtn = document.getElementById('notif-ampm-btn');
     if (!btn) return;
     if (notifActive) {
       btn.classList.add('active');
@@ -278,7 +279,11 @@ async function initTodo() {
       document.getElementById('notif-bell').textContent = '🔔';
       status.textContent = 'Daily at ' + formatHour(notifHour);
       if (timeRow) timeRow.style.display = 'flex';
-      if (timeSelect) timeSelect.value = String(notifHour);
+      if (hourInput) {
+        var display12 = notifHour === 0 ? 12 : (notifHour > 12 ? notifHour - 12 : notifHour);
+        hourInput.value = display12;
+      }
+      if (ampmBtn) ampmBtn.textContent = notifHour >= 12 ? 'PM' : 'AM';
     } else {
       btn.classList.remove('active');
       label.textContent = 'Enable Reminders';
@@ -337,10 +342,22 @@ async function initTodo() {
     notifUpdateUI();
   };
 
-  window.todoChangeNotifTime = async function (selectEl) {
-    var newHour = parseInt(selectEl.value);
-    if (isNaN(newHour) || newHour < 0 || newHour > 23) return;
-    notifHour = newHour;
+  window.todoToggleAmPm = function () {
+    var ampmBtn = document.getElementById('notif-ampm-btn');
+    if (!ampmBtn) return;
+    ampmBtn.textContent = ampmBtn.textContent === 'AM' ? 'PM' : 'AM';
+    todoSaveNotifTime();
+  };
+
+  window.todoSaveNotifTime = async function () {
+    var hourInput = document.getElementById('notif-hour-input');
+    var ampmBtn = document.getElementById('notif-ampm-btn');
+    if (!hourInput || !ampmBtn) return;
+    var h = parseInt(hourInput.value);
+    if (isNaN(h) || h < 1 || h > 12) return;
+    var isPM = ampmBtn.textContent === 'PM';
+    var hour24 = h === 12 ? (isPM ? 12 : 0) : (isPM ? h + 12 : h);
+    notifHour = hour24;
     var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
     await window._supabase.from('push_subscriptions')
       .update({ notif_hour: notifHour, timezone: tz })
@@ -1034,11 +1051,15 @@ async function initRanker() {
   }
 
   // --- API Key UI management ---
-  function showKeySavedUI() {
+  function showKeySavedUI(flash) {
     var sec = document.getElementById('api-section');
     sec.style.display = 'flex';
     document.getElementById('api-key-input-wrap').style.display = 'none';
     document.getElementById('api-key-saved').style.display = 'flex';
+    if (flash) {
+      var el = document.getElementById('key-flash');
+      if (el) { el.textContent = '✓ Saved'; el.style.opacity = '1'; setTimeout(function(){ el.style.opacity = '0'; }, 1500); }
+    }
   }
   function showKeyInputUI() {
     var sec = document.getElementById('api-section');
@@ -1055,13 +1076,19 @@ async function initRanker() {
   if (apiKey) showKeySavedUI();
 
   // --- Prompt UI management ---
-  function showPromptSavedUI() {
+  function showPromptSavedUI(flash) {
     document.getElementById('prompt-section').style.display = 'none';
-    document.getElementById('prompt-saved-section').style.display = 'flex';
+    var btn = document.getElementById('btn-change-prompt');
+    if (btn) btn.style.display = '';
+    if (flash) {
+      var el = document.getElementById('prompt-flash');
+      if (el) { el.textContent = '✓ Saved'; el.style.opacity = '1'; setTimeout(function(){ el.style.opacity = '0'; }, 1500); }
+    }
   }
   function showPromptInputUI() {
     document.getElementById('prompt-section').style.display = '';
-    document.getElementById('prompt-saved-section').style.display = 'none';
+    var btn = document.getElementById('btn-change-prompt');
+    if (btn) btn.style.display = 'none';
     var inp = document.getElementById('ranking-prompt-input');
     if (inp) { inp.value = customPrompt; inp.focus(); }
   }
@@ -1080,7 +1107,7 @@ async function initRanker() {
     customPrompt = input ? input.value || '' : '';
     _saveRankerBg();
     if (customPrompt) {
-      showPromptSavedUI();
+      showPromptSavedUI(true);
       rankerShowToast('Prompt saved', 'success');
     }
   };
@@ -1097,7 +1124,7 @@ async function initRanker() {
       return;
     }
     apiKey = val;
-    showKeySavedUI();
+    showKeySavedUI(true);
     rankerShowToast('API key saved', 'success');
     _saveRankerBg();
   };

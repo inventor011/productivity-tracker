@@ -82,9 +82,13 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .notif-status{font-size:11px;color:var(--muted);letter-spacing:.04em}
 #tab-todo .notif-time-row{display:flex;align-items:center;gap:10px;margin-bottom:24px;animation:todo-fadeUp .6s .12s var(--ease) both}
 #tab-todo .notif-time-label{font-size:12px;color:var(--muted);letter-spacing:.03em;font-family:'DM Sans',sans-serif}
-#tab-todo .notif-time-select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);outline:none;cursor:pointer;transition:border-color .2s;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236a6258' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
-#tab-todo .notif-time-select:focus{border-color:var(--gold)}
-#tab-todo .notif-time-select option{background:var(--bg);color:var(--text)}
+#tab-todo .notif-time-edit{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 8px}
+#tab-todo .notif-hour-input{width:32px;background:transparent;border:none;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);text-align:center;outline:none;-moz-appearance:textfield}
+#tab-todo .notif-hour-input::-webkit-inner-spin-button,#tab-todo .notif-hour-input::-webkit-outer-spin-button{-webkit-appearance:none}
+#tab-todo .notif-colon{font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)}
+#tab-todo .notif-minutes{font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)}
+#tab-todo .notif-ampm-btn{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--gold);cursor:pointer;letter-spacing:.06em;transition:all .15s}
+#tab-todo .notif-ampm-btn:hover{background:rgba(201,168,76,.2);border-color:var(--gold)}
 @keyframes todo-fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes todo-slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes todo-slideOut{from{opacity:1;transform:translateX(0);max-height:80px}to{opacity:0;transform:translateX(20px);max-height:0;padding:0}}
@@ -323,10 +327,9 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-ranker #api-key-input:focus{border-color:var(--accent)}
 #tab-ranker .btn-save-key{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;border-radius:6px;cursor:pointer;transition:background .2s;white-space:nowrap;flex-shrink:0}
 #tab-ranker .btn-save-key:hover{background:var(--accent-glow)}
-#tab-ranker .key-status{font-size:11px;color:var(--muted);white-space:nowrap}
-#tab-ranker .key-status.ok{color:var(--green)}
+#tab-ranker .key-flash{font-size:11px;color:var(--green);white-space:nowrap;transition:opacity .5s;opacity:0}
 #tab-ranker .api-key-input-wrap{display:flex;gap:12px;flex:1;min-width:200px;align-items:center}
-#tab-ranker .api-key-saved{display:flex;gap:12px;align-items:center;flex:1}
+#tab-ranker .api-key-saved{display:flex;gap:8px;align-items:center}
 #tab-ranker .btn-change-key{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.06em;padding:6px 14px;border-radius:6px;cursor:pointer;transition:all .2s;white-space:nowrap}
 #tab-ranker .btn-change-key:hover{border-color:var(--accent);color:var(--accent)}
 #tab-ranker .prompt-section{margin-bottom:24px}
@@ -888,7 +891,6 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   #tab-ranker .api-key-input-wrap{flex-direction:row;width:100%}
   #tab-ranker #api-key-input{flex:1;min-width:0;font-size:11px;padding:7px 10px}
   #tab-ranker .btn-save-key{padding:7px 12px;font-size:10px}
-  #tab-ranker .key-status{font-size:10px}
   #tab-ranker .api-key-saved{flex-wrap:wrap;gap:8px}
   #tab-ranker .btn-change-key{font-size:10px;padding:5px 12px}
   #tab-ranker .prompt-section{margin-bottom:16px}
