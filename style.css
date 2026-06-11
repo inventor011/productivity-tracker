@@ -74,6 +74,17 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .stat{text-align:left}
 #tab-todo .stat-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--gold);line-height:1}
 #tab-todo .stat-label{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+#tab-todo .notif-toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;animation:todo-fadeUp .6s .08s var(--ease) both}
+#tab-todo .notif-toggle-btn{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:7px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:var(--muted);cursor:pointer;transition:all .2s;letter-spacing:.03em}
+#tab-todo .notif-toggle-btn:hover{border-color:var(--gold-dim);color:var(--text)}
+#tab-todo .notif-toggle-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+#tab-todo .notif-bell{font-size:14px;line-height:1}
+#tab-todo .notif-status{font-size:11px;color:var(--muted);letter-spacing:.04em}
+#tab-todo .notif-time-row{display:flex;align-items:center;gap:10px;margin-bottom:24px;animation:todo-fadeUp .6s .12s var(--ease) both}
+#tab-todo .notif-time-label{font-size:12px;color:var(--muted);letter-spacing:.03em;font-family:'DM Sans',sans-serif}
+#tab-todo .notif-time-select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:12px;color:var(--text);outline:none;cursor:pointer;transition:border-color .2s;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236a6258' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+#tab-todo .notif-time-select:focus{border-color:var(--gold)}
+#tab-todo .notif-time-select option{background:var(--bg);color:var(--text)}
 @keyframes todo-fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes todo-slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
 @keyframes todo-slideOut{from{opacity:1;transform:translateX(0);max-height:80px}to{opacity:0;transform:translateX(20px);max-height:0;padding:0}}

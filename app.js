@@ -236,6 +236,120 @@ async function initTodo() {
   todoInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); todoAddTask(); } });
   todoInput.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
   todoRender();
+
+  // ---- Daily Push Notification Reminder (Version 2.1) ----
+  var VAPID_PUBLIC_KEY = 'BFnTAY1IUE4WO3dKgOO5t5XrwZytZj1sGqZgxjJQ6_lxUPPyoH5zGD4JvVJyoAaAKQKs9vs2x-IuSzdgRFKoWvI';
+  var notifSubscription = null;
+  var notifHour = 21;
+  var notifActive = false;
+
+  function urlBase64ToUint8Array(base64String) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var rawData = atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
+  function formatHour(h) {
+    if (h === 0) return '12:00 AM';
+    if (h === 12) return '12:00 PM';
+    return h > 12 ? (h - 12) + ':00 PM' : h + ':00 AM';
+  }
+
+  async function notifLoadState() {
+    var sb = window._supabase;
+    var { data } = await sb.from('push_subscriptions').select('notif_hour, endpoint').eq('user_id', DB.uid()).maybeSingle();
+    if (data) { notifActive = true; notifHour = data.notif_hour; }
+    else { notifActive = false; }
+  }
+
+  function notifUpdateUI() {
+    var btn = document.getElementById('notif-toggle-btn');
+    var label = document.getElementById('notif-label');
+    var status = document.getElementById('notif-status');
+    var timeRow = document.getElementById('notif-time-row');
+    var timeSelect = document.getElementById('notif-time-select');
+    if (!btn) return;
+    if (notifActive) {
+      btn.classList.add('active');
+      label.textContent = 'Reminders On';
+      document.getElementById('notif-bell').textContent = '🔔';
+      status.textContent = 'Daily at ' + formatHour(notifHour);
+      if (timeRow) timeRow.style.display = 'flex';
+      if (timeSelect) timeSelect.value = String(notifHour);
+    } else {
+      btn.classList.remove('active');
+      label.textContent = 'Enable Reminders';
+      document.getElementById('notif-bell').textContent = '🔕';
+      status.textContent = '';
+      if (timeRow) timeRow.style.display = 'none';
+    }
+  }
+
+  window.todoToggleNotifications = async function () {
+    if (!notifActive) {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        alert('Push notifications are not supported in your browser.');
+        return;
+      }
+      if (Notification.permission === 'denied') {
+        alert('Notifications are blocked. Please enable them in your browser settings and try again.');
+        return;
+      }
+      try {
+        var reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        var keys = sub.toJSON();
+        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+        await window._supabase.from('push_subscriptions').upsert({
+          user_id: DB.uid(),
+          endpoint: keys.endpoint,
+          p256dh: keys.keys.p256dh,
+          auth_key: keys.keys.auth,
+          notif_hour: notifHour,
+          timezone: tz
+        }, { onConflict: 'user_id,endpoint' });
+        notifActive = true;
+        notifSubscription = sub;
+      } catch (e) {
+        console.error('Push subscription failed:', e);
+        alert('Could not enable notifications. Please make sure you allow notifications when prompted.');
+        return;
+      }
+    } else {
+      try {
+        var regs = await navigator.serviceWorker.getRegistrations();
+        for (var r = 0; r < regs.length; r++) {
+          var existingSub = await regs[r].pushManager.getSubscription();
+          if (existingSub) await existingSub.unsubscribe();
+        }
+        await window._supabase.from('push_subscriptions').delete().eq('user_id', DB.uid());
+      } catch (e) { console.warn('Unsubscribe error:', e); }
+      notifActive = false;
+      notifSubscription = null;
+    }
+    notifUpdateUI();
+  };
+
+  window.todoChangeNotifTime = async function (selectEl) {
+    var newHour = parseInt(selectEl.value);
+    if (isNaN(newHour) || newHour < 0 || newHour > 23) return;
+    notifHour = newHour;
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
+    await window._supabase.from('push_subscriptions')
+      .update({ notif_hour: notifHour, timezone: tz })
+      .eq('user_id', DB.uid());
+    notifUpdateUI();
+  };
+
+  await notifLoadState();
+  notifUpdateUI();
 }
 
 // ==================== TAB 2: PROGRESS ====================
