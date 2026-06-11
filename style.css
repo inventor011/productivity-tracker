@@ -138,10 +138,10 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-tracker[data-theme="light"]{--bg:#f2ede4;--bg2:#e8e1d6;--surface:#fefcf7;--surface2:#f5f0e6;--border:#ddd5c6;--border2:#c8bfae;--text:#1c1710;--text2:#4a4030;--text3:#9a8e7a;--accent:#b8621a;--accent2:#d4832e;--accent-soft:#f5e4d0;--gold:#c8962a;--green:#3a8a56;--green-s:#d0edda;--blue:#2a6aa8;--blue-s:#d0e4f5;--red:#b83a2a;--red-s:#f5d8d4;--amber:#d4a020;--amber-s:#f5eacc;--shadow:rgba(0,0,0,.06);--shadow2:rgba(0,0,0,.14)}
 #tab-tracker[data-theme="dark"]{--bg:#120f0a;--bg2:#1c1810;--surface:#201c14;--surface2:#2a2518;--border:#36301e;--border2:#4a4230;--text:#f0e8d8;--text2:#b8a888;--text3:#706050;--accent:#d4832e;--accent2:#e8a84a;--accent-soft:#3a2010;--gold:#d4a020;--green:#4aaa6a;--green-s:#142a1c;--blue:#4a8acc;--blue-s:#0e2030;--red:#cc5040;--red-s:#301010;--amber:#d4a820;--amber-s:#302010;--shadow:rgba(0,0,0,.3);--shadow2:rgba(0,0,0,.55)}
 #tab-tracker{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100%;transition:background .3s,color .3s}
-#tab-tracker header{background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 32px;height:80px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px var(--shadow)}
-#tab-tracker .header-left{display:flex;flex-direction:column;gap:0}
-#tab-tracker .week-title-big{font-family:'Inter',system-ui,sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
-#tab-tracker .week-range-sub{font-size:.78rem;color:var(--text3);font-weight:500;margin-top:2px}
+#tab-tracker header{background:var(--surface);border-bottom:1.5px solid var(--border);padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px var(--shadow)}
+#tab-tracker .header-left{display:flex;align-items:baseline;gap:10px}
+#tab-tracker .week-title-big{font-family:'Fraunces','Playfair Display',Georgia,serif;font-size:1.25rem;font-weight:600;letter-spacing:-.02em;line-height:1;font-variation-settings:"opsz" 72}
+#tab-tracker .week-range-sub{font-size:.75rem;color:var(--text3);font-weight:400;margin:0}
 #tab-tracker .logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:900;letter-spacing:-.03em;color:var(--text3)}
 #tab-tracker .logo em{color:var(--accent);font-style:normal}
 #tab-tracker .h-right{display:flex;align-items:center;gap:14px}
@@ -153,7 +153,7 @@ body{background:#080808;font-family:'DM Mono',monospace}
 #tab-tracker[data-theme="dark"] .tog::after{transform:translateX(20px)}
 #tab-tracker main{max-width:960px;margin:0 auto;padding:36px 24px 100px}
 #tab-tracker .week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
-#tab-tracker .week-label h1{font-family:'Playfair Display',serif;font-size:2.1rem;font-weight:900;letter-spacing:-.03em;line-height:1.1}
+#tab-tracker .week-label h1{font-family:'Fraunces','Playfair Display',Georgia,serif;font-size:2.1rem;font-weight:600;letter-spacing:-.02em;line-height:1.1;font-variation-settings:"opsz" 96}
 #tab-tracker .week-label p{font-size:.82rem;color:var(--text3);margin-top:3px;font-weight:500}
 #tab-tracker .nav-arrows{display:flex;gap:8px}
 #tab-tracker .nav-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
