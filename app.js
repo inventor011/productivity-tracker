@@ -241,6 +241,7 @@ async function initTodo() {
   var VAPID_PUBLIC_KEY = 'BFnTAY1IUE4WO3dKgOO5t5XrwZytZj1sGqZgxjJQ6_lxUPPyoH5zGD4JvVJyoAaAKQKs9vs2x-IuSzdgRFKoWvI';
   var notifSubscription = null;
   var notifHour = 21;
+  var notifMinute = 0;
   var notifActive = false;
 
   function urlBase64ToUint8Array(base64String) {
@@ -252,16 +253,17 @@ async function initTodo() {
     return outputArray;
   }
 
-  function formatHour(h) {
-    if (h === 0) return '12:00 AM';
-    if (h === 12) return '12:00 PM';
-    return h > 12 ? (h - 12) + ':00 PM' : h + ':00 AM';
+  function formatTime(h, m) {
+    var mm = (m < 10 ? '0' : '') + m;
+    if (h === 0) return '12:' + mm + ' AM';
+    if (h === 12) return '12:' + mm + ' PM';
+    return h > 12 ? (h - 12) + ':' + mm + ' PM' : h + ':' + mm + ' AM';
   }
 
   async function notifLoadState() {
     var sb = window._supabase;
-    var { data } = await sb.from('push_subscriptions').select('notif_hour, endpoint').eq('user_id', DB.uid()).maybeSingle();
-    if (data) { notifActive = true; notifHour = data.notif_hour; }
+    var { data } = await sb.from('push_subscriptions').select('notif_hour, notif_minute, endpoint').eq('user_id', DB.uid()).maybeSingle();
+    if (data) { notifActive = true; notifHour = data.notif_hour; notifMinute = data.notif_minute || 0; }
     else { notifActive = false; }
   }
 
@@ -271,18 +273,20 @@ async function initTodo() {
     var status = document.getElementById('notif-status');
     var timeRow = document.getElementById('notif-time-row');
     var hourInput = document.getElementById('notif-hour-input');
+    var minInput = document.getElementById('notif-min-input');
     var ampmBtn = document.getElementById('notif-ampm-btn');
     if (!btn) return;
     if (notifActive) {
       btn.classList.add('active');
       label.textContent = 'Reminders On';
       document.getElementById('notif-bell').textContent = '🔔';
-      status.textContent = 'Daily at ' + formatHour(notifHour);
+      status.textContent = 'Daily at ' + formatTime(notifHour, notifMinute);
       if (timeRow) timeRow.style.display = 'flex';
       if (hourInput) {
         var display12 = notifHour === 0 ? 12 : (notifHour > 12 ? notifHour - 12 : notifHour);
         hourInput.value = display12;
       }
+      if (minInput) minInput.value = (notifMinute < 10 ? '0' : '') + notifMinute;
       if (ampmBtn) ampmBtn.textContent = notifHour >= 12 ? 'PM' : 'AM';
     } else {
       btn.classList.remove('active');
@@ -318,6 +322,7 @@ async function initTodo() {
           p256dh: keys.keys.p256dh,
           auth_key: keys.keys.auth,
           notif_hour: notifHour,
+          notif_minute: notifMinute,
           timezone: tz
         }, { onConflict: 'user_id,endpoint' });
         notifActive = true;
@@ -351,16 +356,20 @@ async function initTodo() {
 
   window.todoSaveNotifTime = async function () {
     var hourInput = document.getElementById('notif-hour-input');
+    var minInput = document.getElementById('notif-min-input');
     var ampmBtn = document.getElementById('notif-ampm-btn');
-    if (!hourInput || !ampmBtn) return;
+    if (!hourInput || !minInput || !ampmBtn) return;
     var h = parseInt(hourInput.value);
+    var m = parseInt(minInput.value);
     if (isNaN(h) || h < 1 || h > 12) return;
+    if (isNaN(m) || m < 0 || m > 59) m = 0;
     var isPM = ampmBtn.textContent === 'PM';
     var hour24 = h === 12 ? (isPM ? 12 : 0) : (isPM ? h + 12 : h);
     notifHour = hour24;
+    notifMinute = m;
     var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Kolkata';
     await window._supabase.from('push_subscriptions')
-      .update({ notif_hour: notifHour, timezone: tz })
+      .update({ notif_hour: notifHour, notif_minute: notifMinute, timezone: tz })
       .eq('user_id', DB.uid());
     notifUpdateUI();
   };

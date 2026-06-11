@@ -86,7 +86,8 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .notif-hour-input{width:32px;background:transparent;border:none;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);text-align:center;outline:none;-moz-appearance:textfield}
 #tab-todo .notif-hour-input::-webkit-inner-spin-button,#tab-todo .notif-hour-input::-webkit-outer-spin-button{-webkit-appearance:none}
 #tab-todo .notif-colon{font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)}
-#tab-todo .notif-minutes{font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)}
+#tab-todo .notif-min-input{width:32px;background:transparent;border:none;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);text-align:center;outline:none;-moz-appearance:textfield}
+#tab-todo .notif-min-input::-webkit-inner-spin-button,#tab-todo .notif-min-input::-webkit-outer-spin-button{-webkit-appearance:none}
 #tab-todo .notif-ampm-btn{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:4px;padding:3px 8px;font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--gold);cursor:pointer;letter-spacing:.06em;transition:all .15s}
 #tab-todo .notif-ampm-btn:hover{background:rgba(201,168,76,.2);border-color:var(--gold)}
 @keyframes todo-fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -879,6 +880,15 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   #tab-progress input[type="number"],#tab-progress input[type="text"]{font-size:12px;padding:8px 10px}
 
   /* --- RANKER --- */
+  /* --- TODO notifications --- */
+  #tab-todo .notif-toggle-row{gap:8px;margin-bottom:14px}
+  #tab-todo .notif-toggle-btn{padding:6px 12px;font-size:11px}
+  #tab-todo .notif-status{font-size:10px}
+  #tab-todo .notif-time-row{gap:8px;margin-bottom:16px}
+  #tab-todo .notif-time-label{font-size:11px}
+  #tab-todo .notif-hour-input,#tab-todo .notif-min-input{font-size:13px;width:28px}
+  #tab-todo .notif-ampm-btn{font-size:10px;padding:2px 6px}
+
   #tab-ranker .container{padding:20px 12px 80px}
   #tab-ranker header{margin-bottom:16px;padding-bottom:12px}
   #tab-ranker h1{font-size:22px;white-space:nowrap}
