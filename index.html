@@ -6,7 +6,7 @@
 <title>Master Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=DM+Sans:wght@300;400;500&family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="style.css?v=30"/>
+<link rel="stylesheet" href="style.css?v=31"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -26,8 +26,8 @@
 <nav id="app-nav" style="display:none">
   <button type="button" id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu">☰</button>
   <span class="nav-brand" id="nav-brand-label">⬛ Dashboard</span>
-  <button class="nav-tab active" data-tab="tracker" onclick="switchTab('tracker')"><span class="nav-icon">📅</span> Tracker</button>
-  <button class="nav-tab" data-tab="todo" onclick="switchTab('todo')"><span class="nav-icon">☑</span> To-Do</button>
+  <button class="nav-tab active" data-tab="todo" onclick="switchTab('todo')"><span class="nav-icon">☑</span> To-Do</button>
+  <button class="nav-tab" data-tab="tracker" onclick="switchTab('tracker')"><span class="nav-icon">📅</span> Tracker</button>
   <button class="nav-tab" data-tab="progress" onclick="switchTab('progress')"><span class="nav-icon">📈</span> Progress</button>
   <button class="nav-tab" data-tab="ranker" onclick="switchTab('ranker')"><span class="nav-icon">✦</span> Ranker</button>
   <button class="nav-tab" data-tab="streak" onclick="switchTab('streak')"><span class="nav-icon">🔥</span> Streak</button>
@@ -38,8 +38,8 @@
       <button type="button" id="mobile-menu-close" class="mobile-menu-close" aria-label="Close">✕</button>
     </div>
     <div class="mobile-menu-items">
-      <button class="mobile-menu-item active" data-tab="tracker" onclick="switchTab('tracker');closeMobileMenu()"><span class="nav-icon">📅</span> Tracker</button>
-      <button class="mobile-menu-item" data-tab="todo" onclick="switchTab('todo');closeMobileMenu()"><span class="nav-icon">☑</span> To-Do</button>
+      <button class="mobile-menu-item active" data-tab="todo" onclick="switchTab('todo');closeMobileMenu()"><span class="nav-icon">☑</span> To-Do</button>
+      <button class="mobile-menu-item" data-tab="tracker" onclick="switchTab('tracker');closeMobileMenu()"><span class="nav-icon">📅</span> Tracker</button>
       <button class="mobile-menu-item" data-tab="progress" onclick="switchTab('progress');closeMobileMenu()"><span class="nav-icon">📈</span> Progress</button>
       <button class="mobile-menu-item" data-tab="ranker" onclick="switchTab('ranker');closeMobileMenu()"><span class="nav-icon">✦</span> Ranker</button>
       <button class="mobile-menu-item" data-tab="streak" onclick="switchTab('streak');closeMobileMenu()"><span class="nav-icon">🔥</span> Streak</button>
@@ -90,8 +90,8 @@
     </div>
   </div>
 </div>
-<script src="auth.js?v=30"></script>
-<script src="db.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="auth.js?v=31"></script>
+<script src="db.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>
