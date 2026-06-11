@@ -150,6 +150,33 @@ async function initTodo() {
     }
   };
 
+  window.todoEditTask = function (id) {
+    const li = document.querySelector('#task-list [data-id="' + id + '"]');
+    const t = tasks.find(x => x.id === id);
+    if (!li || !t || li.querySelector('.task-edit-input')) return;
+    const span = li.querySelector('.task-text');
+    if (!span) return;
+    const ta = document.createElement('textarea');
+    ta.className = 'task-edit-input';
+    ta.value = t.text;
+    span.replaceWith(ta);
+    ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    ta.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+    var committed = false;
+    function commit() {
+      if (committed) return; committed = true;
+      const v = ta.value.trim();
+      if (v && v !== t.text) { t.text = v; DB.updateTodo(id, { text: v }); }
+      todoRender();
+    }
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { committed = true; todoRender(); }
+    });
+    ta.addEventListener('blur', commit);
+  };
+
   window.todoDeleteTask = function (id) {
     const li = document.querySelector('#task-list [data-id="' + id + '"]');
     if (li) {
@@ -199,7 +226,7 @@ async function initTodo() {
       const doneCount = items.filter(t => t.done).length;
       html += '<li class="date-header ' + (isCollapsed ? 'collapsed' : '') + '" onclick="todoToggleDate(\'' + dateKey + '\')"><span class="date-caret">' + (isCollapsed ? '▸' : '▾') + '</span><span class="date-label">' + heading + '</span><span class="date-count">' + doneCount + '/' + items.length + '</span></li>';
       if (!isCollapsed) {
-        html += items.map(t => `<li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}"><button class="check-btn" onclick="todoToggleTask(${t.id})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.8 7L9 1" stroke="#0f0f0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="p-dot ${t.priority}"></span><span class="task-text">${escHtml(t.text)}</span><button class="del-btn" onclick="todoDeleteTask(${t.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></li>`).join('');
+        html += items.map(t => `<li class="task-item ${t.done ? 'done' : ''}" data-id="${t.id}"><button class="check-btn" onclick="todoToggleTask(${t.id})"><svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.8 7L9 1" stroke="#0f0f0f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="p-dot ${t.priority}"></span><span class="task-text">${escHtml(t.text)}</span><button class="edit-btn" onclick="todoEditTask(${t.id})" title="Edit task"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="del-btn" onclick="todoDeleteTask(${t.id})"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></button></li>`).join('');
       }
     });
     list.innerHTML = html;
@@ -559,8 +586,34 @@ async function initTracker() {
     else {
       dayTasks.forEach((task, ti) => {
         const item = document.createElement('div'); item.className = 'task-item';
-        item.innerHTML = '<div class="task-item-name">' + escHtml(task.name) + '</div><input type="number" class="task-rating-edit" value="' + task.rating + '" step="0.1" min="0" max="2" data-ti="' + ti + '"/><button class="del-btn" data-ti="' + ti + '">×</button>';
+        item.innerHTML = '<div class="task-item-name">' + escHtml(task.name) + '</div><input type="number" class="task-rating-edit" value="' + task.rating + '" step="0.1" min="0" max="2" data-ti="' + ti + '"/><button class="edit-btn" data-ti="' + ti + '" title="Edit task">✎</button><button class="del-btn" data-ti="' + ti + '">×</button>';
         taskListEl.appendChild(item);
+      });
+      taskListEl.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const ti = +btn.dataset.ti;
+          const item = btn.closest('.task-item'), nameDiv = item.querySelector('.task-item-name');
+          if (!nameDiv) return;
+          const ta = document.createElement('textarea');
+          ta.className = 'task-name-textarea task-edit-area';
+          ta.value = data.days[selDs][ti].name;
+          nameDiv.replaceWith(ta);
+          ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+          ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+          ta.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+          var committed = false;
+          function commit() {
+            if (committed) return; committed = true;
+            const v = ta.value.trim();
+            if (v) { data.days[selDs][ti].name = v; _saveWeekBg(mondayKey, data); }
+            render();
+          }
+          ta.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { committed = true; render(); }
+          });
+          ta.addEventListener('blur', commit);
+        });
       });
       taskListEl.querySelectorAll('.task-rating-edit').forEach(inp => {
         inp.addEventListener('change', () => {
@@ -632,7 +685,7 @@ async function initTracker() {
       _saveWeekBg(mondayKey, data); render();
     }
     renderWeekChart(mondayKey, data, dates);
-    await renderChart(mondayKey); renderReport(mondayKey); renderWeeksList(mondayKey);
+    await renderChart(mondayKey, weekScore(data, mondayKey)); renderReport(mondayKey); renderWeeksList(mondayKey);
     if (window.progSyncFromTracker) syncToProgress();
   }
 
@@ -649,13 +702,10 @@ async function initTracker() {
       points.push({ label: DAYS_SHORT[i], value: avg });
     }
     var ws = weekScore(data, mondayKey), t = tier(ws);
-    var headerEl = area.closest('.chart-section');
-    if (headerEl) {
-      var subtitleEl = headerEl.querySelector('.chart-header p');
-      if (subtitleEl) {
-        if (t) { subtitleEl.innerHTML = 'You have been <strong style="color:' + t.color + '">' + t.label + '</strong> this week'; }
-        else { subtitleEl.textContent = 'Daily average — 0 to 2 scale'; }
-      }
+    var verdictEl = document.getElementById('weekVerdict');
+    if (verdictEl) {
+      if (t) { verdictEl.innerHTML = 'You have been <strong style="color:' + t.color + '">' + t.label + '</strong> this week'; }
+      else { verdictEl.textContent = 'Daily average — 0 to 2 scale'; }
     }
     function yPct(v) { return Math.min(v / MAX_Y, 1) * 100; }
     var yLabelsHtml = gridYs.map(function (v) { return '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v.toFixed(1) + '</div>'; }).join('');
@@ -666,11 +716,11 @@ async function initTracker() {
       var color = p.value >= 0.5 ? 'var(--green)' : p.value > 0 ? 'var(--red)' : 'var(--border2)';
       return '<div class="chart-bar-wrap"><div class="chart-bar" style="height:' + Math.max(h, 2) + '%;background:' + color + '" data-val="' + p.value.toFixed(2) + '"></div></div>';
     }).join('');
-    area.innerHTML = '<div class="chart-wrap"><div class="y-labels">' + yLabelsHtml + '</div><div class="chart-canvas-row">' + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div></div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
+    area.innerHTML = '<div class="chart-wrap"><div class="chart-canvas-row"><div class="y-labels">' + yLabelsHtml + '</div>' + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div></div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
   }
 
   // --- Progress Over Time (past weeks only, 0–7 scale) ---
-  async function renderChart(currentKey) {
+  async function renderChart(currentKey, curWs) {
     var area = document.getElementById('chartArea');
     var currentMondayKey = getSundayOf(0); // the actual current week
     var keys = await DB.allWeekKeys();
@@ -698,6 +748,17 @@ async function initTracker() {
       var wdates = getWeekDates(k);
       entries.push({ key: k, score: ws != null ? ws : 0, label: 'W' + getWeekNum(wdates[0]) + '\n' + (fmt(wdates[0]).split(' ')[1]?.slice(0, 3) || '') });
     }
+    // Verdict vs past weeks: compare this week's score against the average of past weeks
+    var pastScores = entries.filter(function (e) { return e.score > 0; }).map(function (e) { return e.score; });
+    var verdictEl = document.getElementById('weekVerdict');
+    if (verdictEl && curWs != null && pastScores.length) {
+      var pastAvg = pastScores.reduce(function (s, v) { return s + v; }, 0) / pastScores.length;
+      var vLabel, vColor;
+      if (curWs >= pastAvg + 0.5) { vLabel = 'an Overachiever'; vColor = 'var(--green)'; }
+      else if (curWs <= pastAvg - 0.5) { vLabel = 'an Underachiever'; vColor = 'var(--red)'; }
+      else { vLabel = 'Average'; vColor = 'var(--amber)'; }
+      verdictEl.innerHTML = 'You have been <strong style="color:' + vColor + '">' + vLabel + '</strong> this week — past ' + pastScores.length + ' week' + (pastScores.length > 1 ? 's' : '') + ' avg: ' + pastAvg.toFixed(2);
+    }
     function yPct(v) { return Math.min(v / MAX_Y, 1) * 100; }
     // Zone bands for new tiers
     var zones = [
@@ -715,7 +776,7 @@ async function initTracker() {
     var zoneHtml = zones.map(function (z) { return '<div class="zone-band ' + z.cls + '" style="top:' + z.top.toFixed(1) + '%;height:' + (z.bottom - z.top).toFixed(1) + '%"></div>'; }).join('');
     var xLabelsHtml = entries.map(function (e) { return '<div class="x-lbl">' + e.label.replace('\n', '<br>') + '</div>'; }).join('');
     var yLabelsHtml = gridYs.map(function (v) { return '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v + '</div>'; }).join('');
-    area.innerHTML = '<div class="chart-wrap"><div class="y-labels">' + yLabelsHtml + '</div><div class="chart-canvas-row">' + zoneHtml + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div></div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
+    area.innerHTML = '<div class="chart-wrap"><div class="chart-canvas-row"><div class="y-labels">' + yLabelsHtml + '</div>' + zoneHtml + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div></div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
   }
 
   async function renderReport(currentKey) {
