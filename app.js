@@ -129,19 +129,21 @@ async function initTodo() {
     const input = document.getElementById('task-input');
     const text = input.value.trim();
     if (!text) { input.focus(); return; }
-    const row = await DB.insertTodo({ text, done: false, priority: selectedPriority });
-    tasks.push(row);
+    var tempId = Date.now();
+    tasks.push({ id: tempId, text, done: false, priority: selectedPriority, created_at: new Date().toISOString() });
     todoRender();
     input.value = '';
     input.focus();
+    var row = await DB.insertTodo({ text, done: false, priority: selectedPriority });
+    if (row) { var t = tasks.find(function(x){ return x.id === tempId; }); if (t) t.id = row.id; }
   };
 
-  window.todoToggleTask = async function (id) {
+  window.todoToggleTask = function (id) {
     const t = tasks.find(t => t.id === id);
     if (t) {
       t.done = !t.done;
-      await DB.updateTodo(id, { done: t.done });
       todoRender();
+      DB.updateTodo(id, { done: t.done });
     }
   };
 
@@ -149,10 +151,10 @@ async function initTodo() {
     const li = document.querySelector('#task-list [data-id="' + id + '"]');
     if (li) {
       li.classList.add('removing');
-      li.addEventListener('animationend', async () => {
+      li.addEventListener('animationend', () => {
         tasks = tasks.filter(t => t.id !== id);
-        await DB.deleteTodo(id);
         todoRender();
+        DB.deleteTodo(id);
       }, { once: true });
     }
   };
@@ -265,9 +267,9 @@ async function initProgress() {
 
   function escHtml(s) { return String(s).replace(/"/g, '&quot;'); }
 
-  async function progSave() {
-    await DB.saveProgress({ rows, chartTitle, passingPercent });
+  function progSave() {
     showSavedTime();
+    DB.saveProgress({ rows, chartTitle, passingPercent });
   }
 
   function showSavedTime() {
@@ -362,10 +364,10 @@ async function initProgress() {
     if (!confirm('Clear all data?')) return;
     rows = [{ week: 'Week 1', pct: 0 }]; await progSave(); renderRows(); progShowToast('Cleared');
   };
-  window.progUpdateChartTitle = async function (v) {
+  window.progUpdateChartTitle = function (v) {
     chartTitle = v || 'My Progress';
     document.getElementById('chartTitleDisplay').textContent = chartTitle;
-    await DB.saveProgress({ rows, chartTitle, passingPercent });
+    DB.saveProgress({ rows, chartTitle, passingPercent });
   };
   window.progDownloadChart = function () {
     const title = document.getElementById('chartNameInput').value || 'progress-chart';
@@ -383,10 +385,10 @@ async function initProgress() {
     progShowToast('CSV exported!');
   };
 
-  document.getElementById('progPassInput').addEventListener('input', async function (ev) {
+  document.getElementById('progPassInput').addEventListener('input', function (ev) {
     const next = Number(ev.target.value);
     passingPercent = Number.isFinite(next) ? Math.max(0, next) : 70;
-    await DB.saveProgress({ rows, chartTitle, passingPercent });
+    DB.saveProgress({ rows, chartTitle, passingPercent });
     applyProgressStatus();
   });
 
@@ -506,8 +508,17 @@ async function initTracker() {
     document.getElementById('tab-tracker').scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  var _weekCache = {};
+  async function _loadWeekCached(key) {
+    if (_weekCache[key]) return _weekCache[key];
+    var d = await DB.loadWeek(key);
+    _weekCache[key] = d;
+    return d;
+  }
+  function _saveWeekBg(key, obj) { _weekCache[key] = obj; DB.saveWeek(key, obj); }
+
   async function render() {
-    const mondayKey = getSundayOf(currentOffset), data = await DB.loadWeek(mondayKey), dates = getWeekDates(mondayKey);
+    const mondayKey = getSundayOf(currentOffset), data = await _loadWeekCached(mondayKey), dates = getWeekDates(mondayKey);
     const todayStr = ymd(new Date()), isThis = currentOffset === 0;
     if (selectedDayIdx === null) { if (isThis) { selectedDayIdx = new Date().getDay(); } else selectedDayIdx = 0; }
     const wn = getWeekNum(new Date(mondayKey + 'T00:00:00'));
@@ -547,17 +558,18 @@ async function initTracker() {
         taskListEl.appendChild(item);
       });
       taskListEl.querySelectorAll('.task-rating-edit').forEach(inp => {
-        inp.addEventListener('change', async () => {
+        inp.addEventListener('change', () => {
           const ti = +inp.dataset.ti; var val = parseFloat(inp.value); if (isNaN(val)) return;
           val = Math.min(2, Math.max(0, val));
-          const d2 = await DB.loadWeek(mondayKey); d2.days[selDs][ti].rating = val; await DB.saveWeek(mondayKey, d2); render();
+          data.days[selDs][ti].rating = val;
+          _saveWeekBg(mondayKey, data); render();
         });
       });
       taskListEl.querySelectorAll('.del-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const ti = +btn.dataset.ti, d2 = await DB.loadWeek(mondayKey);
-          d2.days[selDs].splice(ti, 1); if (!d2.days[selDs].length) delete d2.days[selDs];
-          await DB.saveWeek(mondayKey, d2); render();
+        btn.addEventListener('click', () => {
+          const ti = +btn.dataset.ti;
+          data.days[selDs].splice(ti, 1); if (!data.days[selDs].length) delete data.days[selDs];
+          _saveWeekBg(mondayKey, data); render();
         });
       });
     }
@@ -589,29 +601,30 @@ async function initTracker() {
     var r2In = document.getElementById('taskRatingIn2');
     if (r2In) r2In.addEventListener('keydown', function (e) { if (e.key === 'Enter') mobileStepDone(); });
 
-    async function mobileStepDone() {
+    function mobileStepDone() {
       var nameEl = document.getElementById('taskNameIn');
       var ratingEl = document.getElementById('taskRatingIn2');
       var name = nameEl.value.trim(); var rating = parseFloat(ratingEl.value);
       if (isNaN(rating)) { ratingEl.style.borderColor = 'var(--red)'; setTimeout(function(){ ratingEl.style.borderColor = ''; }, 900); return; }
       rating = Math.min(2, Math.max(0, rating));
-      const d2 = await DB.loadWeek(mondayKey); if (!d2.days[selDs]) d2.days[selDs] = [];
-      d2.days[selDs].push({ name, rating }); await DB.saveWeek(mondayKey, d2);
+      if (!data.days[selDs]) data.days[selDs] = [];
+      data.days[selDs].push({ name, rating });
       nameEl.value = ''; ratingEl.value = '';
       document.getElementById('addStepRating').style.display = 'none';
       document.getElementById('addStepName').style.display = 'flex';
-      render();
+      _saveWeekBg(mondayKey, data); render();
     }
 
-    async function addTask() {
+    function addTask() {
       const nameEl = document.getElementById('taskNameIn'), ratingEl = document.getElementById('taskRatingIn');
       const name = nameEl.value.trim(); var rating = parseFloat(ratingEl.value);
       if (!name) { nameEl.style.borderColor = 'var(--red)'; setTimeout(() => nameEl.style.borderColor = '', 900); return; }
       if (isNaN(rating)) { ratingEl.style.borderColor = 'var(--red)'; setTimeout(() => ratingEl.style.borderColor = '', 900); return; }
       rating = Math.min(2, Math.max(0, rating));
-      const d2 = await DB.loadWeek(mondayKey); if (!d2.days[selDs]) d2.days[selDs] = [];
-      d2.days[selDs].push({ name, rating }); await DB.saveWeek(mondayKey, d2);
-      nameEl.value = ''; ratingEl.value = ''; render();
+      if (!data.days[selDs]) data.days[selDs] = [];
+      data.days[selDs].push({ name, rating });
+      nameEl.value = ''; ratingEl.value = '';
+      _saveWeekBg(mondayKey, data); render();
     }
     renderWeekChart(mondayKey, data, dates);
     await renderChart(mondayKey); renderReport(mondayKey); renderWeeksList(mondayKey);
@@ -787,11 +800,13 @@ async function initTracker() {
   document.getElementById('nextBtn').addEventListener('click', () => { currentOffset++; selectedDayIdx = null; render(); });
   document.getElementById('saveManualBtn').addEventListener('click', async () => {
     const val = parseFloat(document.getElementById('manualInput').value); if (isNaN(val)) return;
-    const k = getSundayOf(currentOffset), d = await DB.loadWeek(k); d.manualRating = val; await DB.saveWeek(k, d); render();
+    const k = getSundayOf(currentOffset), d = await _loadWeekCached(k); d.manualRating = val;
+    _saveWeekBg(k, d); render();
   });
   document.getElementById('clearManualBtn').addEventListener('click', async () => {
-    const k = getSundayOf(currentOffset), d = await DB.loadWeek(k); d.manualRating = null; await DB.saveWeek(k, d);
-    document.getElementById('manualInput').value = ''; render();
+    const k = getSundayOf(currentOffset), d = await _loadWeekCached(k); d.manualRating = null;
+    document.getElementById('manualInput').value = '';
+    _saveWeekBg(k, d); render();
   });
   // Theme toggle is now global (toggleGlobalTheme)
   render();
@@ -847,23 +862,24 @@ async function initRanker() {
   var promptInput = document.getElementById('ranking-prompt-input');
   if (promptInput && customPrompt) promptInput.value = customPrompt;
 
-  window.rankerSavePrompt = async function (val) {
+  window.rankerSavePrompt = function (val) {
     customPrompt = val || '';
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+    _saveRankerBg();
   };
 
-  window.rankerSavePromptBtn = async function () {
+  function _saveRankerBg() { DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt }); }
+
+  window.rankerSavePromptBtn = function () {
     var input = document.getElementById('ranking-prompt-input');
     customPrompt = input ? input.value || '' : '';
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+    _saveRankerBg();
     var btn = document.getElementById('btn-save-prompt');
     if (btn) { btn.textContent = 'Saved ✓'; btn.classList.add('saved'); setTimeout(function () { btn.textContent = 'Save Prompt'; btn.classList.remove('saved'); }, 2000); }
   };
 
-  window.rankerSaveApiKey = async function () {
+  window.rankerSaveApiKey = function () {
     const val = document.getElementById('api-key-input').value.trim();
     if (!val) { rankerShowToast('Enter a valid API key', 'error'); return; }
-    // Validate: Gemini API keys start with "AIza"
     if (!val.startsWith('AIza')) {
       rankerShowToast('Invalid key — Gemini API keys start with "AIza"', 'error');
       return;
@@ -873,32 +889,32 @@ async function initRanker() {
       return;
     }
     apiKey = val;
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     showKeySavedUI();
     rankerShowToast('API key saved', 'success');
+    _saveRankerBg();
   };
 
-  window.rankerAddQuestion = async function () {
+  window.rankerAddQuestion = function () {
     const inp = document.getElementById('question-input'); const text = inp.value.trim();
     if (!text) { rankerShowToast('Question cannot be empty', 'error'); return; }
     questions.push({ id: Date.now(), text, score: null, reason: null, rank: null, addedAt: new Date().toISOString() });
     inp.value = '';
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     rankerRender(); rankerShowToast('Question added', 'success');
+    _saveRankerBg();
   };
 
-  window.rankerDeleteQuestion = async function (id) {
+  window.rankerDeleteQuestion = function (id) {
     questions = questions.filter(q => q.id !== id);
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     rankerRender();
+    _saveRankerBg();
   };
 
-  window.rankerClearAll = async function () {
+  window.rankerClearAll = function () {
     if (questions.length === 0) return;
     if (!confirm('Delete all questions and scores?')) return;
     questions = [];
-    await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
     rankerRender(); rankerShowToast('All questions cleared', 'info');
+    _saveRankerBg();
   };
 
   window.rankerHandleKey = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); rankerAddQuestion(); } };
@@ -1019,7 +1035,8 @@ async function initStreak() {
     if (!name) { streakShowToast('Enter a task name.', 'error'); return; }
     if (!days || days < 1 || days > 365) { streakShowToast('Choose between 1 and 365 days.', 'error'); return; }
     data.push({ id: Date.now().toString(), name, targetDays: days, currentStreak: 0, createdDate: todayStr(), lastLoggedDate: null, history: [], missedDays: [], completed: false, status: 'fresh' });
-    await DB.saveStreaks(data); nameInput.value = ''; daysInput.value = ''; streakRender();
+    nameInput.value = ''; daysInput.value = ''; streakRender();
+    DB.saveStreaks(data);
     streakShowToast('"' + name + '" streak created — ' + days + ' days to go!');
   };
 
@@ -1046,7 +1063,8 @@ async function initStreak() {
   window.streakConfirmDelete = async function () {
     if (!deleteTargetId) return;
     data = data.filter(s => s.id !== deleteTargetId);
-    await DB.saveStreaks(data); streakCloseConfirm(); streakRender(); streakShowToast('Streak deleted.');
+    streakCloseConfirm(); streakRender(); streakShowToast('Streak deleted.');
+    DB.saveStreaks(data);
   };
 
   function streakRender() {
@@ -1136,8 +1154,8 @@ async function initLogbook() {
   function findProj(id) { return S.projects.find(p => p.id === id); }
   function activeProj() { return S.activeId ? findProj(S.activeId) : null; }
 
-  async function createProject(title) { const p = { id: uid(), title, children: [], createdAt: now(), completedAt: null, _lastStatus: 'ns' }; S.projects.push(p); addLog('proj_created', title); S.activeId = p.id; S.tab = 'active'; await save(); render(); }
-  async function deleteProject(id) { const p = findProj(id); if (!p) return; addLog('proj_deleted', p.title); S.projects = S.projects.filter(x => x.id !== id); if (S.activeId === id) S.activeId = null; await save(); render(); }
+  function createProject(title) { const p = { id: uid(), title, children: [], createdAt: now(), completedAt: null, _lastStatus: 'ns' }; S.projects.push(p); addLog('proj_created', title); S.activeId = p.id; S.tab = 'active'; render(); save(); }
+  function deleteProject(id) { const p = findProj(id); if (!p) return; addLog('proj_deleted', p.title); S.projects = S.projects.filter(x => x.id !== id); if (S.activeId === id) S.activeId = null; render(); save(); }
   async function createTask(projId, title) { const p = findProj(projId); if (!p) return; const t = { id: uid(), title, children: [], notes: '', links: [], createdAt: now(), completedAt: null, done: false, expanded: true, _prevStatus: 'ns' }; p.children.push(t); addLog('task_created', title, p.title); syncTaskTree(p.children, p); syncProjectState(p); render(); save(); }
   async function createSubtask(projId, parentId, title) { const p = findProj(projId); if (!p) return; const parent = findTask(p.children, parentId); if (!parent) return; if (!parent.children) parent.children = []; const t = { id: uid(), title, children: [], notes: '', links: [], createdAt: now(), completedAt: null, done: false, expanded: true, _prevStatus: 'ns' }; parent.children.push(t); parent.expanded = true; addLog('subtask_added', title, p.title, parent.title); syncTaskTree(p.children, p); syncProjectState(p); render(); save(); }
   function setAllDone(t, done) {
@@ -1146,7 +1164,7 @@ async function initLogbook() {
   }
   async function toggleTask(projId, taskId) { const p = findProj(projId); if (!p) return; const t = findTask(p.children, taskId); if (!t) return; if (t.children && t.children.length) { var newDone = calcStatus(t) !== 'done'; setAllDone(t, newDone); } else { t.done = !t.done; t.completedAt = t.done ? now() : null; t._prevStatus = t.done ? 'done' : 'ns'; } syncTaskTree(p.children, p); syncProjectState(p); render(); save(); }
   async function deleteTask(projId, taskId) { const p = findProj(projId); if (!p) return; const t = findTask(p.children, taskId); const tName = t ? t.title : ''; function rm(arr) { return arr.filter(x => { if (x.id === taskId) return false; x.children = rm(x.children || []); return true; }); } p.children = rm(p.children); addLog('task_deleted', tName, p.title); delete S.open[taskId]; syncTaskTree(p.children, p); syncProjectState(p); render(); save(); }
-  async function renameProject(projId, newTitle) { const p = findProj(projId); if (!p || !newTitle) return; addLog('proj_renamed', p.title + ' → ' + newTitle); p.title = newTitle; await save(); render(); }
+  function renameProject(projId, newTitle) { const p = findProj(projId); if (!p || !newTitle) return; addLog('proj_renamed', p.title + ' → ' + newTitle); p.title = newTitle; render(); save(); }
   async function renameTask(projId, taskId, newTitle) { const p = findProj(projId); if (!p || !newTitle) return; const t = findTask(p.children, taskId); if (!t) return; addLog('task_renamed', t.title + ' → ' + newTitle, p.title); t.title = newTitle; render(); save(); }
   async function addLink(projId, taskId, url, customName) { const p = findProj(projId); if (!p) return; const t = findTask(p.children, taskId); if (!t) return; let type = 'link', label = ''; try { const u = new URL(url); const h = u.hostname.replace('www.', ''); if (h.includes('youtube.com') || h.includes('youtu.be')) type = 'yt'; else if (h.includes('chatgpt.com') || h.includes('chat.openai.com')) type = 'gpt'; else if (h.includes('claude.ai')) type = 'claude'; label = u.hostname.replace('www.', '') + u.pathname; if (label.length > 40) label = label.slice(0, 38) + '…'; } catch { label = url.length > 40 ? url.slice(0, 38) + '…' : url; } if (customName && customName.trim()) label = customName.trim(); t.links.push({ id: uid(), url, type, label }); addLog('link_added', t.title, p.title); render(); save(); }
   async function removeLink(projId, taskId, linkId) { const p = findProj(projId); if (!p) return; const t = findTask(p.children, taskId); if (!t) return; t.links = t.links.filter(l => l.id !== linkId); render(); save(); }
