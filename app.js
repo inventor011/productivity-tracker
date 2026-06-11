@@ -910,14 +910,21 @@ async function initRanker() {
   let saved = await DB.loadRanker();
   let questions = saved.questions;
   let apiKey = saved.apiKey;
-  let customPrompt = saved.customPrompt || '';
+  let customPrompt = '';
+  try { customPrompt = localStorage.getItem('rankerPrompt:' + DB.uid()) || ''; } catch(e) {}
   let schedulerTimer = null;
 
-  function _saveRankerBg() { DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt }); }
+  function _saveRankerBg() {
+    DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
+    try { localStorage.setItem('rankerPrompt:' + DB.uid(), customPrompt); } catch(e) {}
+  }
 
   // --- API Key UI management ---
   function showKeySavedUI() {
-    document.getElementById('api-section').style.display = 'none';
+    var sec = document.getElementById('api-section');
+    sec.style.display = 'flex';
+    document.getElementById('api-key-input-wrap').style.display = 'none';
+    document.getElementById('api-key-saved').style.display = 'flex';
   }
   function showKeyInputUI() {
     var sec = document.getElementById('api-section');
@@ -1053,7 +1060,7 @@ async function initRanker() {
       questions.sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
       questions.forEach((q, i) => { q.rank = q.score !== null ? i + 1 : null; });
       saved.lastRun = new Date().toDateString();
-      await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun, customPrompt: customPrompt });
+      await DB.saveRanker({ questions, apiKey, lastRun: saved.lastRun });
       rankerLog('✓ Evaluation complete. ' + questions.length + ' questions scored.', 'ok');
       rankerShowToast('Questions ranked successfully', 'success');
       rankerRender();

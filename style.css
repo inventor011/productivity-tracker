@@ -243,7 +243,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-tracker .chart-wrap{position:relative;padding-left:36px;padding-bottom:48px}
 #tab-tracker .chart-canvas-row{position:relative;height:220px;overflow:visible;margin-top:22px}
 #tab-tracker .y-labels{position:absolute;left:-36px;top:0;bottom:0;width:32px}
-#tab-tracker .y-lbl{position:absolute;right:4px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-align:right;transform:translateY(50%)}
+#tab-tracker .y-lbl{position:absolute;right:4px;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-align:right;transform:translateY(-50%)}
 #tab-tracker .grid-line{display:none}
 #tab-tracker .zone-band{position:absolute;left:0;right:0;opacity:.15;pointer-events:none}
 #tab-tracker .zone-over{background:var(--green)}#tab-tracker .zone-good{background:var(--blue)}#tab-tracker .zone-avg{background:var(--amber)}#tab-tracker .zone-under{background:var(--red)}
