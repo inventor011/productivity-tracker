@@ -376,7 +376,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-ranker .score-badge.low{background:rgba(122,122,138,.12);color:var(--rank-low)}
 #tab-ranker .question-body{flex:1;min-width:0}
 #tab-ranker .question-rank{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-#tab-ranker .question-text{font-size:13.5px;color:var(--text);line-height:1.55;word-break:break-word}
+#tab-ranker .question-text{font-size:13.5px;color:var(--text);line-height:1.55;word-break:break-word;white-space:pre-wrap}
 #tab-ranker .question-meta{margin-top:6px;font-size:10px;color:var(--muted);display:flex;gap:14px}
 #tab-ranker .question-reason{margin-top:8px;font-size:11px;color:#8a8578;line-height:1.5;border-left:2px solid var(--border);padding-left:10px;font-style:italic}
 #tab-ranker .btn-delete{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:4px;transition:color .2s,background .2s;flex-shrink:0;line-height:0}
@@ -403,8 +403,9 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-streak .create-row{display:grid;grid-template-columns:1fr 160px auto;gap:12px;align-items:end}
 #tab-streak .field-group{display:flex;flex-direction:column;gap:6px}
 #tab-streak .field-group label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--text-muted)}
-#tab-streak .field-group input{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;padding:10px 14px;outline:none;transition:border-color .2s;width:100%}
-#tab-streak .field-group input:focus{border-color:var(--accent)}
+#tab-streak .field-group input,#tab-streak .field-group textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;padding:10px 14px;outline:none;transition:border-color .2s;width:100%;border-radius:0}
+#tab-streak .field-group textarea{resize:none;overflow:hidden;min-height:40px;line-height:1.4}
+#tab-streak .field-group input:focus,#tab-streak .field-group textarea:focus{border-color:var(--accent)}
 #tab-streak .btn-create{background:var(--accent);color:#0d0d0d;border:none;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.12em;padding:10px 22px;cursor:pointer;transition:background .15s,transform .1s;white-space:nowrap}
 #tab-streak .btn-create:hover{background:#d4b860}
 #tab-streak .btn-create:active{transform:scale(.97)}
@@ -417,7 +418,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-streak .streak-card.complete{border-left-color:#22c55e}
 #tab-streak .streak-card.dead{border-left-color:var(--danger)}
 #tab-streak .card-inner{padding:18px 20px;display:grid;grid-template-columns:1fr auto auto;gap:0 24px;align-items:center}
-#tab-streak .task-name{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--text);margin-bottom:6px}
+#tab-streak .task-name{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--text);margin-bottom:6px;white-space:pre-wrap;word-break:break-word}
 #tab-streak .streak-meta{font-size:.65rem;color:var(--text-muted);letter-spacing:.1em;display:flex;gap:16px;align-items:center}
 #tab-streak .streak-meta .status-badge{padding:1px 8px;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase}
 #tab-streak .badge-active{background:#0d3320;color:#22c55e}
@@ -619,14 +620,14 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 
 /* Repair overrides: keep long user-entered text vertical instead of widening rows. */
 #tab-todo .task-item{align-items:flex-start}
-#tab-todo .task-text{min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+#tab-todo .task-text{min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
 #tab-tracker .add-row{align-items:flex-start}
 #tab-tracker .add-row input[type="text"]{min-width:0}
 #tab-tracker .add-row input[type="number"],#tab-tracker .task-rating-edit,#tab-tracker .del-btn{flex-shrink:0}
 #tab-tracker .task-item{align-items:flex-start;min-width:0}
-#tab-tracker .task-item-name{min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
+#tab-tracker .task-item-name{min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
 #tab-logbook .lb-proj-row,#tab-logbook .lb-task-row{align-items:flex-start}
-#tab-logbook .lb-proj-title,#tab-logbook .lb-done-title,#tab-logbook .lb-task-title{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
+#tab-logbook .lb-proj-title,#tab-logbook .lb-done-title,#tab-logbook .lb-task-title{white-space:pre-wrap;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}
 #tab-logbook .lb-proj-info,#tab-logbook .lb-task-body{min-width:0}
 .tool-tab{padding-bottom:64px}
 
@@ -927,7 +928,7 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   #tab-streak .panel-label{font-size:.55rem;margin-bottom:12px}
   #tab-streak .create-row{grid-template-columns:1fr;gap:10px}
   #tab-streak .field-group label{font-size:.55rem}
-  #tab-streak .field-group input{font-size:.8rem;padding:8px 12px}
+  #tab-streak .field-group input,#tab-streak .field-group textarea{font-size:.8rem;padding:8px 12px}
   #tab-streak .btn-create{padding:10px 18px;font-size:1rem}
   #tab-streak .card-inner{grid-template-columns:1fr;gap:8px;padding:14px}
   #tab-streak .card-left{order:1}

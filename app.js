@@ -1162,6 +1162,8 @@ async function initRanker() {
   };
 
   window.rankerHandleKey = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); rankerAddQuestion(); } };
+  var qInput = document.getElementById('question-input');
+  if (qInput) qInput.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
 
   function checkAndMaybeRun() {
     const now = new Date(), todayStr = now.toDateString();
@@ -1349,7 +1351,9 @@ async function initStreak() {
 
   const d = new Date(); const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('today-display').textContent = days[d.getDay()] + ', ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') streakCloseConfirm(); if (e.key === 'Enter') { const act = document.activeElement; if (act && (act.id === 'task-name' || act.id === 'task-days')) streakCreate(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') streakCloseConfirm(); if (e.key === 'Enter' && !e.shiftKey) { const act = document.activeElement; if (act && (act.id === 'task-name' || act.id === 'task-days')) { e.preventDefault(); streakCreate(); } } });
+  var streakNameInput = document.getElementById('task-name');
+  if (streakNameInput) streakNameInput.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
   streakRender();
 }
 
