@@ -133,6 +133,7 @@ async function initTodo() {
     tasks.push({ id: tempId, text, done: false, priority: selectedPriority, created_at: new Date().toISOString() });
     todoRender();
     input.value = '';
+    input.style.height = 'auto';
     input.focus();
     var row = await DB.insertTodo({ text, done: false, priority: selectedPriority });
     if (row) { var t = tasks.find(function(x){ return x.id === tempId; }); if (t) t.id = row.id; }
@@ -202,7 +203,9 @@ async function initTodo() {
     list.innerHTML = html;
   }
 
-  document.getElementById('task-input').addEventListener('keydown', e => { if (e.key === 'Enter') todoAddTask(); });
+  var todoInput = document.getElementById('task-input');
+  todoInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); todoAddTask(); } });
+  todoInput.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
   todoRender();
 }
 
@@ -631,7 +634,7 @@ async function initTracker() {
     if (window.progSyncFromTracker) syncToProgress();
   }
 
-  // --- Progress Over Week (current week daily averages, 0–1 scale) ---
+  // --- Progress Over Week (current week daily averages, 0–2 scale) ---
   function renderWeekChart(mondayKey, data, dates) {
     var area = document.getElementById('weekChartArea');
     var MAX_Y = 2;
@@ -642,6 +645,15 @@ async function initTracker() {
       var tasks = data.days[ds] || [];
       var avg = tasks.length ? tasks.reduce(function (s, t) { return s + t.rating; }, 0) / tasks.length : 0;
       points.push({ label: DAYS_SHORT[i], value: avg });
+    }
+    var ws = weekScore(data, mondayKey), t = tier(ws);
+    var headerEl = area.closest('.chart-section');
+    if (headerEl) {
+      var subtitleEl = headerEl.querySelector('.chart-header p');
+      if (subtitleEl) {
+        if (t) { subtitleEl.innerHTML = 'You have been <strong style="color:' + t.color + '">' + t.label + '</strong> this week'; }
+        else { subtitleEl.textContent = 'Daily average — 0 to 2 scale'; }
+      }
     }
     function yPct(v) { return Math.min(v / MAX_Y, 1) * 100; }
     var yLabelsHtml = gridYs.map(function (v) { return '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v.toFixed(1) + '</div>'; }).join('');

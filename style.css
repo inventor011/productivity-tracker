@@ -27,10 +27,10 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .progress-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px;letter-spacing:.04em}
 #tab-todo .progress-track{height:2px;background:var(--border);border-radius:2px;overflow:hidden}
 #tab-todo .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;transition:width .5s var(--ease);width:0%}
-#tab-todo .add-row{display:flex;gap:10px;margin-bottom:40px;animation:todo-fadeUp .6s .2s var(--ease) both}
-#tab-todo .add-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:var(--text);outline:none;transition:border-color .2s}
+#tab-todo .add-row{display:flex;gap:10px;margin-bottom:40px;animation:todo-fadeUp .6s .2s var(--ease) both;align-items:flex-end}
+#tab-todo .add-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px 18px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:300;color:var(--text);outline:none;transition:border-color .2s;resize:none;overflow:hidden;min-height:48px;line-height:1.5}
 #tab-todo .add-input::placeholder{color:var(--muted)}
-#tab-todo .add-input:focus{border-color:var(--gold-dim)}
+#tab-todo .add-input:focus{border-color:var(--muted)}
 #tab-todo .add-btn{background:var(--gold);border:none;border-radius:4px;padding:14px 22px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#0f0f0f;cursor:pointer;letter-spacing:.04em;transition:background .2s,transform .1s;white-space:nowrap}
 #tab-todo .add-btn:hover{background:#d9b85c}
 #tab-todo .add-btn:active{transform:scale(.97)}
@@ -55,7 +55,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .check-btn svg{opacity:0;transition:opacity .2s}
 #tab-todo .task-item.done .check-btn{background:var(--gold);border-color:var(--gold)}
 #tab-todo .task-item.done .check-btn svg{opacity:1}
-#tab-todo .task-text{flex:1;font-size:15px;font-weight:300;line-height:1.4;transition:color .3s;cursor:default}
+#tab-todo .task-text{flex:1;font-size:15px;font-weight:300;line-height:1.4;transition:color .3s;cursor:default;white-space:pre-wrap;word-break:break-word}
 #tab-todo .task-item.done .task-text{color:var(--done-text);text-decoration:line-through;text-decoration-color:var(--muted)}
 #tab-todo .p-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 #tab-todo .p-dot.high{background:#b84040}
@@ -178,7 +178,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-tracker .manual-row label{font-size:.82rem;font-weight:600;color:var(--text2);flex:1}
 #tab-tracker .manual-row label span{display:block;font-size:.7rem;font-weight:400;color:var(--text3);margin-top:2px}
 #tab-tracker .rating-input{width:72px;background:var(--bg2);border:1.5px solid var(--border2);border-radius:8px;padding:8px 10px;font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--text);text-align:center;outline:none;transition:border-color .2s}
-#tab-tracker .rating-input:focus{border-color:var(--accent)}
+#tab-tracker .rating-input:focus{border-color:var(--border2)}
 #tab-tracker .save-manual-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-family:'Syne',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;transition:background .2s,transform .15s}
 #tab-tracker .save-manual-btn:hover{background:var(--accent2);transform:translateY(-1px)}
 #tab-tracker .clear-manual-btn{background:none;border:1.5px solid var(--border2);border-radius:8px;padding:8px 14px;font-family:'Syne',sans-serif;font-size:.8rem;color:var(--text3);cursor:pointer;transition:all .2s}
@@ -188,8 +188,9 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-tracker .day-tab:hover{border-color:var(--accent2);background:var(--accent-soft)}
 #tab-tracker .day-tab.active{background:var(--accent);border-color:var(--accent)}
 #tab-tracker .day-tab.active .dtab-name,#tab-tracker .day-tab.active .dtab-date{color:#fff!important}
-#tab-tracker .day-tab.today{border-color:var(--gold)}
-#tab-tracker .day-tab.today .dtab-date{color:var(--gold)}
+#tab-tracker .day-tab.today{border-color:var(--border2)}
+#tab-tracker .day-tab.today .dtab-name{color:var(--gold);font-weight:700}
+#tab-tracker .day-tab.today:not(.active){box-shadow:inset 0 -2px 0 var(--gold)}
 #tab-tracker .day-tab.has-data .dtab-dot{width:5px;height:5px;border-radius:50%;background:var(--green);margin:3px auto 0}
 #tab-tracker .dtab-name{font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--text3)}
 #tab-tracker .dtab-date{font-size:1rem;font-weight:700;color:var(--text);margin-top:2px}
@@ -203,24 +204,24 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-tracker .add-row{display:flex;gap:8px;margin-bottom:16px;align-items:center}
 #tab-tracker .add-row input[type="text"],#tab-tracker .task-name-textarea{flex:1;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;padding:10px 14px;font-family:'Syne',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s}
 #tab-tracker .task-name-textarea{resize:none;overflow:hidden;min-height:40px;line-height:1.4}
-#tab-tracker .add-row input[type="text"]:focus,#tab-tracker .task-name-textarea:focus{border-color:var(--accent)}
+#tab-tracker .add-row input[type="text"]:focus,#tab-tracker .task-name-textarea:focus{border-color:var(--border2)}
 #tab-tracker .add-row input[type="text"]::placeholder,#tab-tracker .task-name-textarea::placeholder{color:var(--text3)}
 #tab-tracker .add-row input[type="number"]{width:64px;background:var(--bg2);border:1.5px solid var(--border);border-radius:9px;padding:10px 8px;font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:700;color:var(--accent);text-align:center;outline:none;transition:border-color .2s;-moz-appearance:textfield}
 #tab-tracker .add-row input[type="number"]::-webkit-inner-spin-button,#tab-tracker .add-row input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none}
-#tab-tracker .add-row input[type="number"]:focus{border-color:var(--accent)}
+#tab-tracker .add-row input[type="number"]:focus{border-color:var(--border2)}
 #tab-tracker .add-btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;transition:background .2s,transform .15s;white-space:nowrap}
 #tab-tracker .add-btn:hover{background:var(--accent2);transform:translateY(-1px)}
 #tab-tracker .film-toggle{display:flex;align-items:center;gap:4px;font-size:.72rem;color:var(--text3);cursor:pointer;white-space:nowrap;letter-spacing:.04em;font-family:'DM Mono',monospace;user-select:none}
 #tab-tracker .film-toggle input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
 #tab-tracker .film-badge{display:inline-block;background:var(--accent);color:#fff;font-size:.6rem;padding:1px 6px;border-radius:4px;margin-right:6px;letter-spacing:.06em;font-family:'DM Mono',monospace;vertical-align:middle}
 #tab-tracker .task-list{display:flex;flex-direction:column;gap:6px}
-#tab-tracker .task-item{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;animation:tracker-slideIn .2s ease;transition:border-color .2s}
+#tab-tracker .task-item{display:flex;align-items:flex-start;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;animation:tracker-slideIn .2s ease;transition:border-color .2s}
 #tab-tracker .task-item:hover{border-color:var(--border2)}
 @keyframes tracker-slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-#tab-tracker .task-item-name{flex:1;font-size:.88rem;font-weight:500;color:var(--text)}
+#tab-tracker .task-item-name{flex:1;font-size:.88rem;font-weight:500;color:var(--text);white-space:pre-wrap;word-break:break-word}
 #tab-tracker .task-rating-edit{width:52px;background:var(--bg);border:1.5px solid var(--border2);border-radius:7px;padding:4px 6px;font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;color:var(--accent);text-align:center;outline:none;-moz-appearance:textfield}
 #tab-tracker .task-rating-edit::-webkit-inner-spin-button,#tab-tracker .task-rating-edit::-webkit-outer-spin-button{-webkit-appearance:none}
-#tab-tracker .task-rating-edit:focus{border-color:var(--accent)}
+#tab-tracker .task-rating-edit:focus{border-color:var(--border2)}
 #tab-tracker .del-btn{background:none;border:1px solid transparent;border-radius:6px;color:var(--text3);cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .2s}
 #tab-tracker .del-btn:hover{color:var(--red);border-color:var(--red-s);background:var(--red-s)}
 #tab-tracker .empty-day{text-align:center;padding:32px 0;color:var(--text3);font-size:.85rem}
