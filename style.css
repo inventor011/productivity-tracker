@@ -50,7 +50,6 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .date-header .date-count{font-size:10px;color:var(--muted);letter-spacing:.1em;background:rgba(255,255,255,.04);padding:2px 8px;border-radius:3px}
 #tab-todo .date-header.collapsed{border-bottom-color:transparent}
 #tab-todo .task-item{display:flex;align-items:center;gap:14px;padding:16px 4px;border-bottom:1px solid var(--border);animation:todo-slideIn .35s var(--ease) both;position:relative}
-#tab-todo .task-item.removing{animation:todo-slideOut .3s var(--ease) forwards}
 #tab-todo .check-btn{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);background:transparent;cursor:pointer;flex-shrink:0;transition:all .2s;display:flex;align-items:center;justify-content:center}
 #tab-todo .check-btn svg{opacity:0;transition:opacity .2s}
 #tab-todo .task-item.done .check-btn{background:var(--gold);border-color:var(--gold)}
@@ -92,7 +91,6 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-todo .notif-ampm-btn:hover{background:rgba(201,168,76,.2);border-color:var(--gold)}
 @keyframes todo-fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes todo-slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes todo-slideOut{from{opacity:1;transform:translateX(0);max-height:80px}to{opacity:0;transform:translateX(20px);max-height:0;padding:0}}
 
 /* TAB 2 — WEEKLY PROGRESS */
 #tab-progress{--bg:#0f0f0f;--surface:#181818;--card:#1c1c1c;--border:#2a2a2a;--accent:#c8ff00;--accent2:#7c6fff;--text:#f0f0f5;--muted:#6b6b80;--danger:#ff4d6d;--input-bg:#1c1c1c;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,sans-serif;min-height:100%;padding:40px 20px}

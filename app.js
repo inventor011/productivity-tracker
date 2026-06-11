@@ -178,15 +178,9 @@ async function initTodo() {
   };
 
   window.todoDeleteTask = function (id) {
-    const li = document.querySelector('#task-list [data-id="' + id + '"]');
-    if (li) {
-      li.classList.add('removing');
-      li.addEventListener('animationend', () => {
-        tasks = tasks.filter(t => t.id !== id);
-        todoRender();
-        DB.deleteTodo(id);
-      }, { once: true });
-    }
+    tasks = tasks.filter(t => t.id !== id);
+    todoRender();
+    DB.deleteTodo(id);
   };
 
   function escHtml(str) { return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
