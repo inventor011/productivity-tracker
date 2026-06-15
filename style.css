@@ -261,6 +261,9 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-tracker .grid-line{display:none}
 #tab-tracker .zone-band{position:absolute;left:0;right:0;opacity:.15;pointer-events:none}
 #tab-tracker .zone-over{background:var(--green)}#tab-tracker .zone-good{background:var(--blue)}#tab-tracker .zone-avg{background:var(--amber)}#tab-tracker .zone-under{background:var(--red)}
+#tab-tracker .simple-bar-chart .chart-canvas-row{background:transparent}
+#tab-tracker .simple-bar-chart .chart-bar{background:var(--green)}
+#tab-tracker .simple-bar-chart .chart-bar::after{color:var(--green)}
 #tab-tracker .chart-bars-row{position:absolute;left:0;right:0;bottom:0;top:0;display:flex;align-items:flex-end;gap:6px;padding:0 8px}
 #tab-tracker .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative}
 #tab-tracker .chart-bar{width:100%;max-width:72px;border-radius:5px 5px 0 0;min-height:3px;position:relative;transition:height .6s cubic-bezier(.34,1.56,.64,1);cursor:default}
@@ -278,6 +281,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-tracker .report-section{background:var(--surface);border:1.5px solid var(--border);border-radius:16px;padding:28px;box-shadow:0 2px 12px var(--shadow);margin-bottom:28px}
 #tab-tracker .report-section h2{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:10px}
 #tab-tracker .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+#tab-tracker .report-grid:has(.report-stat:nth-child(3):last-child){grid-template-columns:repeat(3,1fr)}
 #tab-tracker .report-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 #tab-tracker .report-stat .rs-lbl{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
 #tab-tracker .report-stat .rs-val{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--accent)}
@@ -377,6 +381,9 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-ranker .question-text{font-size:13.5px;color:var(--text);line-height:1.55;word-break:break-word;white-space:pre-wrap}
 #tab-ranker .question-meta{margin-top:6px;font-size:10px;color:var(--muted);display:flex;gap:14px}
 #tab-ranker .question-reason{margin-top:8px;font-size:11px;color:#8a8578;line-height:1.5;border-left:2px solid var(--border);padding-left:10px;font-style:italic}
+#tab-ranker .question-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+#tab-ranker .btn-question-edit{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:5px;cursor:pointer;transition:color .2s,border-color .2s,background .2s}
+#tab-ranker .btn-question-edit:hover{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
 #tab-ranker .btn-delete{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:4px;transition:color .2s,background .2s;flex-shrink:0;line-height:0}
 #tab-ranker .btn-delete:hover{color:var(--red);background:var(--red-dim)}
 #tab-ranker .empty-state{text-align:center;padding:64px 20px;color:var(--muted);border:1px dashed var(--border);border-radius:12px}
@@ -521,7 +528,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-logbook .lb-status-badge.ns{background:#222;color:var(--lb-faint)}
 #tab-logbook .lb-status-badge.ip{background:rgba(230,126,34,.12);color:var(--lb-amber)}
 #tab-logbook .lb-status-badge.done{background:rgba(39,174,96,.12);color:var(--lb-green)}
-#tab-logbook .lb-add-task-btn{width:100%;padding:12px;border-radius:8px;border:1px dashed #2a2a2a;color:var(--lb-muted);font-weight:600;font-size:13px;transition:all .2s;margin-bottom:16px;text-align:center}
+#tab-logbook .lb-add-task-btn{width:100%;padding:12px;border-radius:8px;border:1px dashed #2a2a2a;color:var(--lb-muted);font-weight:600;font-size:13px;transition:all .2s;margin-bottom:16px;text-align:center;display:flex;align-items:center;justify-content:center}
 #tab-logbook .lb-add-task-btn:hover{border-color:var(--lb-red);color:var(--lb-red)}
 #tab-logbook .lb-add-top-input{margin-bottom:16px}
 #tab-logbook .lb-add-top-input input{padding:10px 12px;font-size:13px}
@@ -548,6 +555,13 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-logbook .lb-task-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .15s}
 #tab-logbook .lb-task-row:hover .lb-task-actions{opacity:1}
 #tab-logbook .lb-task-actions.force-show{opacity:1!important}
+#tab-logbook .lb-three-dot{display:flex;align-items:center;justify-content:center;font-size:16px;padding:4px 6px;color:var(--lb-muted);cursor:pointer;border-radius:4px;line-height:1}
+#tab-logbook .lb-three-dot:hover{background:var(--lb-surface2);color:var(--lb-text)}
+#tab-logbook .lb-dot-menu{position:absolute;right:0;top:100%;background:var(--lb-surface);border:1px solid #2a2a2a;border-radius:8px;min-width:160px;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden;animation:lb-slideDown .15s ease}
+#tab-logbook .lb-dot-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;font-size:12px;color:var(--lb-text);background:transparent;border:none;cursor:pointer;text-align:left;font-family:inherit;transition:background .12s}
+#tab-logbook .lb-dot-menu-item:hover{background:var(--lb-surface2)}
+#tab-logbook .lb-dot-menu-item.danger{color:var(--lb-red)}
+#tab-logbook .lb-dot-menu-item.danger:hover{background:rgba(214,48,49,.08)}
 #tab-logbook .lb-act-btn{padding:4px 6px;border-radius:4px;font-size:12px;color:var(--lb-faint);transition:color .12s,background .12s;position:relative}
 #tab-logbook .lb-act-btn:hover{color:var(--lb-text);background:var(--lb-surface)}
 #tab-logbook .lb-act-btn .badge{position:absolute;top:1px;right:1px;width:6px;height:6px;border-radius:50%}

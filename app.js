@@ -59,6 +59,7 @@ function switchTab(name, persist) {
   if (apiKeyBtn) apiKeyBtn.style.display = (name === 'ranker') ? '' : 'none';
   var promptBtn = document.getElementById('mobile-change-prompt');
   if (promptBtn) promptBtn.style.display = (name === 'ranker') ? '' : 'none';
+  if (name === 'ranker' && typeof window.rankerRefreshMenuLabels === 'function') window.rankerRefreshMenuLabels();
   if (persist !== false) DB.savePrefs({ active_tab: name, tracker_theme: document.getElementById('tab-tracker').getAttribute('data-theme') || 'light' });
 }
 
@@ -237,6 +238,7 @@ async function initTodo() {
   var notifHour = 21;
   var notifMinute = 0;
   var notifActive = false;
+  var notifTimer = null;
 
   function urlBase64ToUint8Array(base64String) {
     var padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -252,6 +254,32 @@ async function initTodo() {
     if (h === 0) return '12:' + mm + ' AM';
     if (h === 12) return '12:' + mm + ' PM';
     return h > 12 ? (h - 12) + ':' + mm + ' PM' : h + ':' + mm + ' AM';
+  }
+
+  function nextNotifDate() {
+    var d = new Date();
+    d.setHours(notifHour, notifMinute || 0, 0, 0);
+    if (d <= new Date()) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  function scheduleLocalNotifCheck() {
+    if (notifTimer) clearTimeout(notifTimer);
+    if (!notifActive || Notification.permission !== 'granted') return;
+    var next = nextNotifDate();
+    notifTimer = setTimeout(async function () {
+      var remaining = tasks.filter(function (t) { return !t.done; }).length;
+      if (remaining > 0) {
+        var body = remaining + ' unchecked task' + (remaining !== 1 ? 's' : '') + ' remaining today.';
+        try {
+          var reg = await navigator.serviceWorker.ready;
+          reg.showNotification('Task Reminder', { body: body, tag: 'todo-reminder', renotify: true });
+        } catch (e) {
+          try { new Notification('Task Reminder', { body: body }); } catch (_) {}
+        }
+      }
+      scheduleLocalNotifCheck();
+    }, Math.max(1000, next - new Date()));
   }
 
   async function notifLoadState() {
@@ -274,7 +302,7 @@ async function initTodo() {
       btn.classList.add('active');
       label.textContent = 'Reminders On';
       document.getElementById('notif-bell').textContent = '🔔';
-      status.textContent = 'Daily at ' + formatTime(notifHour, notifMinute);
+      status.textContent = 'Daily at ' + formatTime(notifHour, notifMinute) + ' · next ' + nextNotifDate().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       if (timeRow) timeRow.style.display = 'flex';
       if (hourInput) {
         var display12 = notifHour === 0 ? 12 : (notifHour > 12 ? notifHour - 12 : notifHour);
@@ -282,12 +310,14 @@ async function initTodo() {
       }
       if (minInput) minInput.value = (notifMinute < 10 ? '0' : '') + notifMinute;
       if (ampmBtn) ampmBtn.textContent = notifHour >= 12 ? 'PM' : 'AM';
+      scheduleLocalNotifCheck();
     } else {
       btn.classList.remove('active');
       label.textContent = 'Enable Reminders';
       document.getElementById('notif-bell').textContent = '🔕';
       status.textContent = '';
       if (timeRow) timeRow.style.display = 'none';
+      if (notifTimer) clearTimeout(notifTimer);
     }
   }
 
@@ -304,7 +334,8 @@ async function initTodo() {
       try {
         var reg = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
-        var sub = await reg.pushManager.subscribe({
+        var sub = await reg.pushManager.getSubscription();
+        if (!sub) sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
@@ -894,23 +925,15 @@ async function initTracker() {
       verdictEl.innerHTML = 'You have been <strong style="color:' + vColor + '">' + vLabel + '</strong> this week — past ' + pastScores.length + ' week' + (pastScores.length > 1 ? 's' : '') + ' avg: ' + pastAvg.toFixed(2);
     }
     function yPct(v) { return Math.min(v / MAX_Y, 1) * 100; }
-    // Zone bands for new tiers
-    var zones = [
-      { cls: 'zone-over', top: 0, bottom: (1 - 6.5/7) * 100 },
-      { cls: 'zone-good', top: (1 - 6.5/7) * 100, bottom: (1 - 5/7) * 100 },
-      { cls: 'zone-avg', top: (1 - 5/7) * 100, bottom: (1 - 4/7) * 100 },
-      { cls: 'zone-under', top: (1 - 4/7) * 100, bottom: 100 }
-    ];
     var barsHtml = entries.map(function (e) {
-      var bc = barClass(e.score);
+      var bc = e.score >= 5 ? 'bar-over' : (e.score >= 4 ? 'bar-avg' : 'bar-under');
       var heightPct = yPct(e.score);
       return '<div class="chart-bar-wrap"><div class="chart-bar ' + bc + '" style="height:' + Math.max(heightPct, 2) + '%" data-val="' + e.score.toFixed(2) + '"></div></div>';
     }).join('');
     var gridHtml = gridYs.map(function (v) { return '<div class="grid-line" style="bottom:' + yPct(v) + '%"></div>'; }).join('');
-    var zoneHtml = zones.map(function (z) { return '<div class="zone-band ' + z.cls + '" style="top:' + z.top.toFixed(1) + '%;height:' + (z.bottom - z.top).toFixed(1) + '%"></div>'; }).join('');
     var xLabelsHtml = entries.map(function (e) { return '<div class="x-lbl">' + e.label.replace('\n', '<br>') + '</div>'; }).join('');
     var yLabelsHtml = gridYs.map(function (v) { return '<div class="y-lbl" style="bottom:' + yPct(v) + '%">' + v + '</div>'; }).join('');
-    area.innerHTML = '<div class="chart-wrap"><div class="chart-canvas-row"><div class="y-labels">' + yLabelsHtml + '</div>' + zoneHtml + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div></div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
+    area.innerHTML = '<div class="chart-wrap simple-bar-chart"><div class="chart-canvas-row"><div class="y-labels">' + yLabelsHtml + '</div>' + gridHtml + '<div class="chart-bars-row">' + barsHtml + '</div></div><div class="x-labels-row">' + xLabelsHtml + '</div></div>';
   }
 
   async function renderReport(currentKey) {
@@ -949,6 +972,12 @@ async function initTracker() {
     if (ws != null) {
       html += '<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="downloadMdBtn" style="font-size:.8rem;padding:8px 18px">↓ Download as .md</button><button class="btn btn-ghost" id="downloadTxtBtn" style="font-size:.8rem;padding:8px 18px">↓ Download as .txt</button></div>';
     }
+    html = html.replace('Tasks Logged', 'Total Tasks');
+    var allTimeStart = html.indexOf('<div class="report-stat"><div class="rs-lbl">All-Time Avg</div>');
+    if (allTimeStart !== -1) {
+      var allTimeEnd = html.indexOf('</div></div></div><div class="report-text">', allTimeStart);
+      if (allTimeEnd !== -1) html = html.slice(0, allTimeStart) + '</div><div class="report-text">' + html.slice(allTimeEnd + '</div></div></div><div class="report-text">'.length);
+    }
     el.innerHTML = html;
     var mdBtn = document.getElementById('downloadMdBtn');
     var txtBtn = document.getElementById('downloadTxtBtn');
@@ -973,7 +1002,7 @@ async function initTracker() {
     var out = '\n' + wn + '. Things done from the ' + rangeStr + '.\n';
     out += '   Week Score: ' + ws.toFixed(2) + '\n';
     out += '   Percentage: ' + pct + '%\n';
-    out += '   Tasks Logged: ' + allTasks.length + '\n';
+    out += '   Total Tasks: ' + allTasks.length + '\n';
     out += '   \n';
     out += '   Tasks Done:/\n';
     if (allTasks.length) { allTasks.forEach(function (t, i) { out += (i + 1) + '. ' + t + '\n'; }); }
@@ -1053,12 +1082,27 @@ async function initRanker() {
     try { localStorage.setItem('rankerPrompt:' + DB.uid(), customPrompt); } catch(e) {}
   }
 
+  function updateRankerMenuLabels() {
+    var apiBtn = document.getElementById('mobile-change-api-key');
+    var promptBtn = document.getElementById('mobile-change-prompt');
+    if (apiBtn) apiBtn.innerHTML = '<span class="nav-icon">ðŸ”‘</span> ' + (apiKey ? 'Change API Key' : 'Add API Key');
+    if (promptBtn) promptBtn.innerHTML = '<span class="nav-icon">ðŸ“</span> ' + (customPrompt ? 'Change Prompt' : 'Add Custom Prompt');
+  }
+  window.rankerRefreshMenuLabels = updateRankerMenuLabels;
+
   // --- API Key UI management ---
   function showKeySavedUI(flash) {
     var sec = document.getElementById('api-section');
     sec.style.display = 'flex';
     document.getElementById('api-key-input-wrap').style.display = 'none';
     document.getElementById('api-key-saved').style.display = 'flex';
+    var keyBtn = document.getElementById('btn-change-key');
+    var promptBtn = document.getElementById('btn-change-prompt');
+    if (keyBtn) keyBtn.textContent = apiKey ? 'Change API Key' : 'Add API Key';
+    if (promptBtn) { promptBtn.style.display = ''; promptBtn.textContent = customPrompt ? 'Change Prompt' : 'Add Custom Prompt'; }
+    var promptSection = document.getElementById('prompt-section');
+    if (promptSection) promptSection.style.display = 'none';
+    updateRankerMenuLabels();
     if (flash) {
       var el = document.getElementById('key-flash');
       if (el) { el.textContent = '✓ Saved'; el.style.opacity = '1'; setTimeout(function(){ el.style.opacity = '0'; }, 1500); }
@@ -1076,13 +1120,11 @@ async function initRanker() {
   }
   window.rankerShowKeyInput = showKeyInputUI;
 
-  if (apiKey) showKeySavedUI();
+  showKeySavedUI();
 
   // --- Prompt UI management ---
   function showPromptSavedUI(flash) {
-    document.getElementById('prompt-section').style.display = 'none';
-    var btn = document.getElementById('btn-change-prompt');
-    if (btn) btn.style.display = '';
+    showKeySavedUI(false);
     if (flash) {
       var el = document.getElementById('prompt-flash');
       if (el) { el.textContent = '✓ Saved'; el.style.opacity = '1'; setTimeout(function(){ el.style.opacity = '0'; }, 1500); }
@@ -1112,6 +1154,9 @@ async function initRanker() {
     if (customPrompt) {
       showPromptSavedUI(true);
       rankerShowToast('Prompt saved', 'success');
+    } else {
+      showKeySavedUI(false);
+      rankerShowToast('Prompt cleared', 'info');
     }
   };
 
@@ -1145,6 +1190,22 @@ async function initRanker() {
     questions = questions.filter(q => q.id !== id);
     rankerRender();
     _saveRankerBg();
+  };
+
+  window.rankerEditQuestion = function (id) {
+    var q = questions.find(function (item) { return item.id === id; });
+    if (!q) return;
+    var next = prompt('Edit question:', q.text);
+    if (next == null) return;
+    next = next.trim();
+    if (!next) { rankerShowToast('Question cannot be empty', 'error'); return; }
+    q.text = next;
+    q.score = null;
+    q.reason = null;
+    q.rank = null;
+    rankerRender();
+    _saveRankerBg();
+    rankerShowToast('Question updated', 'success');
   };
 
   window.rankerClearAll = function () {
@@ -1228,12 +1289,14 @@ async function initRanker() {
       const rankStr = q.rank ? '#' + q.rank + ' · ' : '';
       const added = new Date(q.addedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       const reasonHtml = q.reason ? '<div class="question-reason">' + esc(q.reason) + '</div>' : '';
-      return '<div class="question-card ' + cardClass + '" data-id="' + q.id + '"><div class="score-badge ' + badgeClass + '">' + badgeText + '</div><div class="question-body"><div class="question-rank">' + rankStr + 'Added ' + added + '</div><div class="question-text">' + esc(q.text) + '</div>' + reasonHtml + '<div class="question-meta">' + (has ? '<span>Score: ' + score + '/10</span>' : '<span>Not yet evaluated</span>') + '</div></div><button class="btn-delete" onclick="rankerDeleteQuestion(' + q.id + ')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>';
+      return '<div class="question-card ' + cardClass + '" data-id="' + q.id + '"><div class="score-badge ' + badgeClass + '">' + badgeText + '</div><div class="question-body"><div class="question-rank">' + rankStr + 'Added ' + added + '</div><div class="question-text">' + esc(q.text) + '</div>' + reasonHtml + '<div class="question-meta">' + (has ? '<span>Score: ' + score + '/10</span>' : '<span>Not yet evaluated</span>') + '</div></div><div class="question-actions"><button class="btn-question-edit" onclick="rankerEditQuestion(' + q.id + ')" title="Edit question">Edit</button><button class="btn-delete" onclick="rankerDeleteQuestion(' + q.id + ')" title="Delete question"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>';
     }).join('');
   }
   window.rankerRender = rankerRender;
   function rankerLog(msg, type) {
-    const el = document.getElementById('eval-log'); const p = document.createElement('p');
+    const el = document.getElementById('eval-log');
+    if (!el) { if (type === 'err') console.warn(msg); else console.log(msg); return; }
+    const p = document.createElement('p');
     const ts = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     p.textContent = '[' + ts + '] ' + msg; if (type) p.className = type;
     if (el.children.length === 1 && el.children[0].textContent.startsWith('Waiting')) el.innerHTML = '';
@@ -1428,7 +1491,8 @@ async function initLogbook() {
       parts.push(h('span', { className: 'lb-summary-sep' }, '·'));
       parts.push('First task completed ' + fmtDate(ts[0]));
       parts.push(h('span', { className: 'lb-summary-sep' }, '·'));
-      parts.push('Last task completed ' + fmtDate(ts[ts.length - 1]));
+      if (projPct(p) >= 100) parts.push('Last task completed ' + fmtDate(ts[ts.length - 1]));
+      else parts.pop();
     }
     return parts;
   }
@@ -1445,7 +1509,7 @@ async function initLogbook() {
   function renderSidebarFooter() { const el = document.getElementById('lb-sidebar-footer'); el.innerHTML = ''; if (S._addingProject) { const wrap = h('div', { className: 'lb-add-proj-row' }); const inp = h('input', { placeholder: 'Project name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } if (ev.key === 'Escape') { S._addingProject = false; render(); } } }); const btn = h('button', { onClick: () => { if (inp.value.trim()) { S._addingProject = false; createProject(inp.value.trim()); } } }, 'Add'); wrap.append(inp, btn); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-new-proj-btn', onClick: () => { S._addingProject = true; render(); } }, '+ New Project')); } }
   function renderMain() { const el = document.getElementById('lb-main'); el.innerHTML = ''; const p = activeProj(); if (!p) { el.appendChild(h('div', { className: 'lb-empty-state' }, h('div', { className: 'icon' }, '📋'), h('p', {}, 'Select or create a project'))); return; } const pct = projPct(p); const st = projStatus(p); const stLabel = st === 'done' ? 'Completed' : st === 'ip' ? 'In Progress' : 'Not Started'; const header = h('div', { className: 'lb-proj-header' }, h('h1', { style: { cursor: 'pointer' }, title: 'Double-click to rename', onDblclick: function () { var newName = prompt('Rename project:', p.title); if (newName && newName.trim()) renameProject(p.id, newName.trim()); } }, p.title), h('div', { className: 'meta lb-project-summary' }, ...projectSummaryDates(p)), h('div', { className: 'lb-header-bar-wrap' }, h('div', { className: 'lb-header-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-header-row' }, h('div', { className: 'lb-header-pct', style: { color: statusColor(st, pct) } }, pct + '%'), h('div', { className: 'lb-status-badge ' + st, style: st === 'ip' ? { background: pct >= 50 ? 'rgba(39,174,96,.12)' : 'rgba(230,126,34,.12)', color: statusColor(st, pct) } : {} }, stLabel))); el.appendChild(header); if (S.addingTop) { const wrap = h('div', { className: 'lb-add-top-input' }); const inp = h('input', { placeholder: 'Task name…', onKeydown: ev => { if (ev.key === 'Enter' && inp.value.trim()) { S.addingTop = false; createTask(p.id, inp.value.trim()); } if (ev.key === 'Escape') { S.addingTop = false; render(); } } }); wrap.appendChild(inp); el.appendChild(wrap); requestAnimationFrame(() => inp.focus()); } else { el.appendChild(h('button', { className: 'lb-add-task-btn', onClick: () => { S.addingTop = true; render(); } }, '+ Add task')); } const tree = h('div', {}); p.children.forEach(t => tree.appendChild(renderTaskNode(t, p))); el.appendChild(tree); }
   function renderTaskNode(t, proj) { const st = calcStatus(t); const hasChildren = t.children && t.children.length > 0; const pct = hasChildren ? taskPct(t) : 0; const open = S.open[t.id] || {}; const isArmed = S._pendingDel === t.id; const toggle = h('div', { className: 'lb-expand-toggle' + (hasChildren ? (t.expanded ? ' expanded' : '') : ' hidden'), onClick: ev => { ev.stopPropagation(); if (hasChildren) { t.expanded = !t.expanded; save(); render(); } } }, '▶'); const line = h('div', { className: 'lb-status-line', style: { background: statusColor(st, pct) } }); let checkContent = ''; if (st === 'done') checkContent = '✓'; else if (st === 'ip') checkContent = '◑'; const check = h('div', { className: 'lb-task-check' + (st === 'done' ? ' done' : st === 'ip' ? ' ip' : ''), style: st === 'ip' ? { borderColor: statusColor(st, pct), color: statusColor(st, pct) } : {}, onClick: ev => { ev.stopPropagation(); toggleTask(proj.id, t.id); } }, checkContent); const body = h('div', { className: 'lb-task-body' }, h('div', { className: 'lb-task-title' + (t.done ? ' completed' : '') }, t.title), hasChildren ? h('div', { className: 'lb-task-sub-info' }, h('div', { className: 'lb-mini-bar-wrap' }, h('div', { className: 'lb-mini-bar', style: { width: pct + '%', background: statusColor(st, pct) } })), h('div', { className: 'lb-mini-pct' }, pct + '%')) : null); const ts = t.completedAt ? h('div', { className: 'lb-task-ts' }, fmtFull(t.completedAt)) : null; const notesBadge = t.notes ? h('div', { className: 'badge', style: { background: 'var(--lb-amber)' } }) : null; const linksBadge = t.links && t.links.length ? h('div', { className: 'badge', style: { background: 'var(--lb-blue)' } }) : null;
-    var isMob = window.innerWidth <= 640;
+    var isMob = true;
     var actions;
     if (isMob) {
       // Mobile: 3-dot menu
@@ -1621,6 +1685,43 @@ function closeStoryModal() {
   if (modal) modal.style.display = 'none';
 }
 
+function installShiftPageSelectionFallback() {
+  function isEditable(el) {
+    return el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.isContentEditable);
+  }
+  function rangeFromPoint(x, y) {
+    if (document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
+    if (document.caretPositionFromPoint) {
+      var pos = document.caretPositionFromPoint(x, y);
+      if (!pos) return null;
+      var r = document.createRange();
+      r.setStart(pos.offsetNode, pos.offset);
+      r.collapse(true);
+      return r;
+    }
+    return null;
+  }
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'PageDown' || !ev.shiftKey || isEditable(document.activeElement)) return;
+    var sel = window.getSelection();
+    if (!sel) return;
+    var startRange = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : rangeFromPoint(24, 80);
+    if (!startRange) return;
+    var rect = startRange.getBoundingClientRect();
+    var x = rect && rect.left ? rect.left : 24;
+    var y = Math.min(window.innerHeight - 24, (rect && rect.bottom ? rect.bottom : 80) + window.innerHeight * 0.85);
+    var endRange = rangeFromPoint(x, y) || rangeFromPoint(window.innerWidth / 2, y);
+    if (!endRange) return;
+    ev.preventDefault();
+    var next = document.createRange();
+    next.setStart(startRange.startContainer, startRange.startOffset);
+    next.setEnd(endRange.startContainer, endRange.startOffset);
+    sel.removeAllRanges();
+    sel.addRange(next);
+    window.scrollBy({ top: Math.round(window.innerHeight * 0.85), behavior: 'auto' });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   var footer = document.getElementById('app-footer');
   var btn = document.getElementById('footer-our-story');
@@ -1630,6 +1731,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (close) close.addEventListener('click', closeStoryModal);
   if (overlay) overlay.addEventListener('click', function (ev) { if (ev.target === overlay) closeStoryModal(); });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closeStoryModal(); });
+  installShiftPageSelectionFallback();
   // Show footer once auth-ready
   if (window.DB && DB.onReady) {
     DB.onReady(function () { if (footer) footer.style.display = 'flex'; maybeShowWelcome(); });
