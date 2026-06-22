@@ -531,7 +531,8 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-logbook .lb-add-task-btn{width:100%;min-height:60px;padding:12px;border-radius:8px;border:1px dashed #2a2a2a;color:var(--lb-muted);font-weight:600;font-size:13px;transition:all .2s;margin-bottom:16px;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1.2}
 #tab-logbook .lb-add-task-btn:hover{border-color:var(--lb-red);color:var(--lb-red)}
 #tab-logbook .lb-add-top-input{margin-bottom:16px}
-#tab-logbook .lb-add-top-input input{padding:10px 12px;font-size:13px}
+#tab-logbook .lb-add-top-input input,#tab-logbook .lb-add-top-input textarea{padding:10px 12px;font-size:13px}
+#tab-logbook .lb-add-top-input textarea,#tab-logbook .lb-add-child-wrap textarea{resize:none;overflow:hidden;min-height:36px;font-family:inherit;line-height:1.4;display:block;width:100%;box-sizing:border-box}
 #tab-logbook .lb-task-node{position:relative}
 #tab-logbook .lb-task-row{display:flex;align-items:center;padding:7px 8px;border-radius:6px;gap:6px;position:relative;transition:background .12s}
 #tab-logbook .lb-task-row:hover{background:var(--lb-surface2)}
@@ -585,7 +586,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-logbook .lb-link-del{font-size:11px;color:var(--lb-faint);padding:2px 4px;cursor:pointer}
 #tab-logbook .lb-link-del:hover{color:var(--lb-red)}
 #tab-logbook .lb-add-child-wrap{padding:4px 8px 4px calc(var(--lb-indent));animation:lb-slideDown .15s ease}
-#tab-logbook .lb-add-child-wrap input{font-size:13px;padding:8px 10px}
+#tab-logbook .lb-add-child-wrap input,#tab-logbook .lb-add-child-wrap textarea{font-size:13px;padding:8px 10px}
 @keyframes lb-slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 #tab-logbook .lb-sidebar-empty{padding:20px;text-align:center;color:var(--lb-faint);font-size:13px}
 
@@ -684,6 +685,11 @@ body[data-global-theme="light"] .mobile-menu-item{color:#8a7e6a;border-left-colo
 body[data-global-theme="light"] .mobile-menu-item:hover,body[data-global-theme="light"] .mobile-menu-item.active{color:#3d2a1f;background:#f0ead8}
 body[data-global-theme="light"] .mobile-menu-divider{background:#e0d8c8}
 body[data-global-theme="light"] .mobile-menu-footer{border-top-color:#e0d8c8}
+body[data-global-theme="light"] .mobile-menu-subitems{background:rgba(0,0,0,.03)}
+body[data-global-theme="light"] .mobile-menu-subitem{color:#a09888}
+body[data-global-theme="light"] .mobile-menu-subitem:hover{color:#5a4e3a;background:rgba(0,0,0,.03)}
+body[data-global-theme="light"] .mobile-menu-subitem.active{color:#3d2a1f;background:#f0ead8;border-left-color:#d97757}
+body[data-global-theme="light"] .mobile-menu-item .submenu-arrow{color:#b8a888}
 
 /* To-Do light */
 body[data-global-theme="light"] #tab-todo{--bg:#f5f2ec;--surface:#fefcf7;--border:#e0d8c8;--gold:#b8621a;--gold-dim:#d4832e;--text:#3d2a1f;--muted:#8a7e6a;--done-text:#c4b8a0;--red:#b84040}
@@ -768,6 +774,15 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   .mobile-menu-footer{padding:18px 20px;border-top:1px solid #222;display:flex;flex-direction:column;align-items:center;gap:8px}
   .mobile-menu-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20000}
   .mobile-menu-backdrop.open{display:block}
+
+  /* --- Mobile menu sub-items (Logbook dropdown) --- */
+  .mobile-menu-subitems{display:flex;flex-direction:column;padding:2px 0 6px 0;background:rgba(0,0,0,.2);overflow:hidden;animation:submenuSlideDown .2s ease}
+  @keyframes submenuSlideDown{from{opacity:0;max-height:0}to{opacity:1;max-height:200px}}
+  .mobile-menu-subitem{display:flex;align-items:center;width:100%;padding:11px 22px 11px 60px;background:transparent;border:none;border-left:3px solid transparent;color:#7a756e;font-family:'Inter',system-ui,sans-serif;font-size:12.5px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .15s;text-align:left}
+  .mobile-menu-subitem:hover{color:#c8c0b0;background:rgba(255,255,255,.03)}
+  .mobile-menu-subitem.active{color:#e8e0d0;border-left-color:#d97757;background:rgba(217,119,87,.06)}
+  .mobile-menu-item .submenu-arrow{margin-left:auto;font-size:11px;color:#555;transition:transform .2s ease;display:inline-block}
+  .mobile-menu-item .submenu-arrow.expanded{transform:rotate(90deg)}
 
   /* --- Auth card --- */
   .auth-card{padding:28px 20px 24px}
