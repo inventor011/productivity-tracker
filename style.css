@@ -528,7 +528,7 @@ body{background:#0f0f0f;font-family:'DM Mono',monospace}
 #tab-logbook .lb-status-badge.ns{background:#222;color:var(--lb-faint)}
 #tab-logbook .lb-status-badge.ip{background:rgba(230,126,34,.12);color:var(--lb-amber)}
 #tab-logbook .lb-status-badge.done{background:rgba(39,174,96,.12);color:var(--lb-green)}
-#tab-logbook .lb-add-task-btn{width:100%;padding:12px;border-radius:8px;border:1px dashed #2a2a2a;color:var(--lb-muted);font-weight:600;font-size:13px;transition:all .2s;margin-bottom:16px;text-align:center;display:flex;align-items:center;justify-content:center}
+#tab-logbook .lb-add-task-btn{width:100%;min-height:60px;padding:12px;border-radius:8px;border:1px dashed #2a2a2a;color:var(--lb-muted);font-weight:600;font-size:13px;transition:all .2s;margin-bottom:16px;text-align:center;display:flex;align-items:center;justify-content:center;line-height:1.2}
 #tab-logbook .lb-add-task-btn:hover{border-color:var(--lb-red);color:var(--lb-red)}
 #tab-logbook .lb-add-top-input{margin-bottom:16px}
 #tab-logbook .lb-add-top-input input{padding:10px 12px;font-size:13px}
@@ -995,4 +995,20 @@ body[data-global-theme="light"] #app-footer{background:linear-gradient(180deg,tr
   .lb-mobile-proj-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--lb-surface2,#1b1b1b);border-bottom:1px solid #222;cursor:pointer;font-size:13px;font-weight:600;color:var(--lb-text,#e8e4dc)}
   .lb-mobile-proj-toggle .toggle-arrow{font-size:10px;color:var(--lb-muted,#8a8680);transition:transform .2s}
   .lb-mobile-proj-toggle .toggle-arrow.expanded{transform:rotate(180deg)}
+}
+
+/* UI repair: project actions and mobile report stacking */
+#tab-logbook .lb-project-actions{position:relative;display:flex;justify-content:flex-end;margin:-18px 0 18px;z-index:5}
+#tab-logbook .lb-project-menu-btn{border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;color:var(--lb-muted);font-weight:700;font-size:12px;letter-spacing:.04em;transition:color .15s,border-color .15s,background .15s}
+#tab-logbook .lb-project-menu-btn:hover{color:var(--lb-text);border-color:#444;background:var(--lb-surface2)}
+#tab-logbook .lb-project-menu{top:calc(100% + 6px);right:0}
+#tab-logbook .lb-tabs{grid-template-columns:repeat(4,1fr)}
+body[data-global-theme="light"] #tab-logbook .lb-project-menu-btn{border-color:#d0c4b0;color:#8a7e6a}
+@media(max-width:640px){
+  #tab-tracker .report-grid,
+  #tab-tracker .report-grid:has(.report-stat:nth-child(3):last-child){grid-template-columns:1fr!important;overflow:visible}
+  #tab-tracker .report-stat{width:100%;box-sizing:border-box}
+  #tab-logbook .lb-project-actions{justify-content:stretch;margin:-8px 0 14px}
+  #tab-logbook .lb-project-menu-btn{width:100%;padding:10px 12px}
+  #tab-logbook .lb-project-menu{left:0;right:0;width:100%}
 }
