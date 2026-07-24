@@ -1027,3 +1027,18 @@ body[data-global-theme="light"] #tab-logbook .lb-project-menu-btn{border-color:#
   #tab-logbook .lb-project-menu-btn{width:100%;padding:10px 12px}
   #tab-logbook .lb-project-menu{left:0;right:0;width:100%}
 }
+
+
+/* Follow-up UX repairs: Ranker typography/editing and steady To-Do typing */
+#tab-todo .add-input{height:48px;max-height:132px;overflow-y:auto;scrollbar-gutter:stable}
+#tab-todo .task-edit-input{max-height:150px;overflow-y:auto;scrollbar-gutter:stable}
+#tab-ranker{font-family:'DM Sans',sans-serif;font-weight:300}
+#tab-ranker h1{font-family:'Playfair Display',serif;font-weight:700;letter-spacing:0}
+#tab-ranker .subtitle,#tab-ranker .section-label,#tab-ranker .q-count,#tab-ranker .question-rank,#tab-ranker .question-meta{font-family:'DM Sans',sans-serif}
+#tab-ranker #api-key-input,#tab-ranker #ranking-prompt-input,#tab-ranker #question-input,#tab-ranker .question-text,#tab-ranker .question-reason,#tab-ranker .btn-change-key,#tab-ranker .btn-save-key,#tab-ranker .btn-save-prompt,#tab-ranker .btn-run,#tab-ranker .btn-clear-all,#tab-ranker .btn-question-edit{font-family:'DM Sans',sans-serif}
+#tab-ranker .question-text{font-weight:300;font-size:15px;line-height:1.45}
+#tab-ranker .question-edit-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;color:var(--text);outline:none;resize:none;overflow:hidden;line-height:1.45;box-sizing:border-box}
+#tab-ranker .question-edit-input:focus{border-color:var(--accent)}
+#tab-ranker .btn-question-edit{font-size:0;width:26px;height:26px;padding:4px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--border)}
+#tab-ranker .btn-question-edit::before{content:'\270E';font-size:14px;line-height:1}
+#tab-ranker .btn-question-edit:hover{color:var(--accent);background:transparent;border-color:transparent}

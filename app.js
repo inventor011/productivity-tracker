@@ -254,7 +254,7 @@ async function initTodo() {
 
   var todoInput = document.getElementById('task-input');
   todoInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); todoAddTask(); } });
-  todoInput.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+  todoInput.addEventListener('input', function () { this.style.height = ''; });
   todoRender();
 
   // ---- Daily Push Notification Reminder (Version 2.1) ----
@@ -1220,18 +1220,40 @@ async function initRanker() {
 
   window.rankerEditQuestion = function (id) {
     var q = questions.find(function (item) { return item.id === id; });
-    if (!q) return;
-    var next = prompt('Edit question:', q.text);
-    if (next == null) return;
-    next = next.trim();
-    if (!next) { rankerShowToast('Question cannot be empty', 'error'); return; }
-    q.text = next;
-    q.score = null;
-    q.reason = null;
-    q.rank = null;
-    rankerRender();
-    _saveRankerBg();
-    rankerShowToast('Question updated', 'success');
+    var card = document.querySelector('#questions-list .question-card[data-id="' + id + '"]');
+    if (!q || !card || card.querySelector('.question-edit-input')) return;
+    var textEl = card.querySelector('.question-text');
+    if (!textEl) return;
+    var ta = document.createElement('textarea');
+    ta.className = 'question-edit-input';
+    ta.value = q.text;
+    textEl.replaceWith(ta);
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+    ta.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+    var committed = false;
+    function commit() {
+      if (committed) return;
+      committed = true;
+      var next = ta.value.trim();
+      if (!next) { rankerShowToast('Question cannot be empty', 'error'); rankerRender(); return; }
+      if (next !== q.text) {
+        q.text = next;
+        q.score = null;
+        q.reason = null;
+        q.rank = null;
+        _saveRankerBg();
+        rankerShowToast('Question updated', 'success');
+      }
+      rankerRender();
+    }
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') { committed = true; rankerRender(); }
+    });
+    ta.addEventListener('blur', commit);
   };
 
   window.rankerClearAll = function () {
@@ -1265,12 +1287,14 @@ async function initRanker() {
   }
 
   function updateSchedulerUI(nextDate) {
-    document.getElementById('sched-dot').className = 'dot live';
-    document.getElementById('sched-label').textContent = 'Scheduler active';
+    var dot = document.getElementById('sched-dot');
+    var label = document.getElementById('sched-label');
+    if (dot) dot.className = 'dot live';
+    if (label) label.textContent = 'Scheduler active';
     const disp = document.getElementById('next-run-display');
     const ref = nextDate || new Date();
     if (!nextDate) { if (ref.getHours() >= 11) ref.setDate(ref.getDate() + 1); ref.setHours(11, 0, 0, 0); }
-    disp.textContent = 'Next run: ' + ref.toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (disp) disp.textContent = 'Next run: ' + ref.toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   window.rankerRunEvaluation = async function () {
@@ -1634,7 +1658,7 @@ async function initLogbook() {
   function render() {
     // On mobile, force 'active' tab since tabs are hidden
     // Mobile logbook tabs now handled via dropdown menu — allow all tabs
-    renderTabs(); renderSidebarContent(); renderSidebarFooter(); renderMain();
+    renderTabs(); renderSidebarContent(); renderSidebarFooter(); renderMain(); refreshMobileLogbookSections();
     // Mobile: add dropdown toggle for project list
     if (window.innerWidth <= 640) {
       var sidebar = document.querySelector('#tab-logbook .lb-sidebar');
@@ -1644,7 +1668,7 @@ async function initLogbook() {
         var toggle = document.createElement('div');
         toggle.className = 'lb-mobile-proj-toggle';
         var p = activeProj();
-        toggle.innerHTML = '<span>' + (p ? p.title : 'Select Project') + '</span><span class="toggle-arrow' + (S._mobileProjectsOpen ? ' expanded' : '') + '">▼</span>';
+        toggle.innerHTML = '<span>' + logbookTabLabel(S.tab) + '</span><span class="toggle-arrow' + (S._mobileProjectsOpen ? ' expanded' : '') + '">&#9662;</span>';
         toggle.addEventListener('click', function () {
           S._mobileProjectsOpen = !S._mobileProjectsOpen;
           content.classList.toggle('mobile-collapsed', !S._mobileProjectsOpen);
@@ -1663,7 +1687,7 @@ async function initLogbook() {
         }
       } else {
         var p2 = activeProj();
-        existingToggle.querySelector('span:first-child').textContent = p2 ? p2.title : 'Select Project';
+        existingToggle.querySelector('span:first-child').textContent = logbookTabLabel(S.tab);
       }
     }
   }
