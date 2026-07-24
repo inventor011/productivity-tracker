@@ -187,8 +187,16 @@ async function initTodo() {
     ta.value = t.text;
     span.replaceWith(ta);
     ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
-    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
-    ta.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+    const todoScroller = document.getElementById('tab-todo');
+    const todoScrollTop = todoScroller ? todoScroller.scrollTop : window.scrollY;
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(0, 0);
+    if (todoScroller) todoScroller.scrollTop = todoScrollTop; else window.scrollTo(0, todoScrollTop);
+    ta.addEventListener('input', function () {
+      const keepTop = todoScroller ? todoScroller.scrollTop : window.scrollY;
+      this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+      if (todoScroller) todoScroller.scrollTop = keepTop; else window.scrollTo(0, keepTop);
+    });
     var committed = false;
     function commit() {
       if (committed) return; committed = true;
@@ -789,8 +797,16 @@ async function initTracker() {
           ta.value = data.days[selDs][ti].name;
           nameDiv.replaceWith(ta);
           ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
-          ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
-          ta.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+          const trackerScroller = document.getElementById('tab-tracker');
+          const trackerScrollTop = trackerScroller ? trackerScroller.scrollTop : window.scrollY;
+          ta.focus({ preventScroll: true });
+          ta.setSelectionRange(0, 0);
+          if (trackerScroller) trackerScroller.scrollTop = trackerScrollTop; else window.scrollTo(0, trackerScrollTop);
+          ta.addEventListener('input', function () {
+            const keepTop = trackerScroller ? trackerScroller.scrollTop : window.scrollY;
+            this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+            if (trackerScroller) trackerScroller.scrollTop = keepTop; else window.scrollTo(0, keepTop);
+          });
           var committed = false;
           function commit() {
             if (committed) return; committed = true;
@@ -1230,9 +1246,16 @@ async function initRanker() {
     textEl.replaceWith(ta);
     ta.style.height = 'auto';
     ta.style.height = ta.scrollHeight + 'px';
-    ta.focus();
-    ta.setSelectionRange(ta.value.length, ta.value.length);
-    ta.addEventListener('input', function () { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+    const rankerScroller = document.getElementById('tab-ranker');
+    const rankerScrollTop = rankerScroller ? rankerScroller.scrollTop : window.scrollY;
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(0, 0);
+    if (rankerScroller) rankerScroller.scrollTop = rankerScrollTop; else window.scrollTo(0, rankerScrollTop);
+    ta.addEventListener('input', function () {
+      const keepTop = rankerScroller ? rankerScroller.scrollTop : window.scrollY;
+      this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+      if (rankerScroller) rankerScroller.scrollTop = keepTop; else window.scrollTo(0, keepTop);
+    });
     var committed = false;
     function commit() {
       if (committed) return;
