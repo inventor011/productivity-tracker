@@ -1042,3 +1042,19 @@ body[data-global-theme="light"] #tab-logbook .lb-project-menu-btn{border-color:#
 #tab-ranker .btn-question-edit{font-size:0;width:26px;height:26px;padding:4px;display:inline-flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--border)}
 #tab-ranker .btn-question-edit::before{content:'\270E';font-size:14px;line-height:1}
 #tab-ranker .btn-question-edit:hover{color:var(--accent);background:transparent;border-color:transparent}
+
+
+/* Exact To-Do typography/style match for Ranker question list */
+#tab-ranker #questions-list{gap:0}
+#tab-ranker .question-card{background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;padding:16px 4px;gap:14px;transform:none;animation:todo-slideIn .35s var(--ease, cubic-bezier(.4,0,.2,1)) both}
+#tab-ranker .question-card:hover{border-color:var(--border);transform:none}
+#tab-ranker .question-card.ranked-high,#tab-ranker .question-card.ranked-mid,#tab-ranker .question-card.ranked-low,#tab-ranker .question-card.unranked{border-left:0;border-bottom:1px solid var(--border)}
+#tab-ranker .question-body{font-family:'DM Sans',sans-serif;font-weight:300;min-width:0}
+#tab-ranker .question-text{font-family:'DM Sans',sans-serif!important;font-size:15px!important;font-weight:300!important;line-height:1.4!important;color:var(--text);white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+#tab-ranker .question-rank{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+#tab-ranker .question-meta{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:300;color:var(--muted);margin-top:6px}
+#tab-ranker .question-reason{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:300;line-height:1.45;color:var(--muted);border-left:1px solid var(--border);padding-left:10px;margin-top:10px;font-style:italic}
+#tab-ranker .question-edit-input{font-family:'DM Sans',sans-serif!important;font-size:14px!important;font-weight:300!important;line-height:1.4!important;border-radius:4px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text)}
+#tab-ranker .btn-question-edit,#tab-ranker .btn-delete{color:var(--border)}
+#tab-ranker .btn-question-edit:hover{color:var(--accent)}
+@media(max-width:640px){#tab-ranker .question-text{font-size:15px!important;line-height:1.4!important}#tab-ranker .question-card{padding:16px 4px;gap:14px}}
