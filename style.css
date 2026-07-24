@@ -1058,3 +1058,10 @@ body[data-global-theme="light"] #tab-logbook .lb-project-menu-btn{border-color:#
 #tab-ranker .btn-question-edit,#tab-ranker .btn-delete{color:var(--border)}
 #tab-ranker .btn-question-edit:hover{color:var(--accent)}
 @media(max-width:640px){#tab-ranker .question-text{font-size:15px!important;line-height:1.4!important}#tab-ranker .question-card{padding:16px 4px;gap:14px}}
+
+
+/* Inline edit fields should expand like normal text, not become scroll boxes */
+#tab-todo .task-edit-input{max-height:none!important;overflow:hidden!important;scrollbar-gutter:auto!important;background:transparent!important;border-color:transparent!important;border-radius:0!important;padding:0!important;font-size:15px!important;font-weight:300!important;line-height:1.4!important;box-shadow:none!important}
+#tab-todo .task-edit-input:focus{border-color:transparent!important;outline:none!important}
+#tab-ranker .question-edit-input{max-height:none!important;overflow:hidden!important;background:transparent!important;border-color:transparent!important;border-radius:0!important;padding:0!important;font-size:15px!important;font-weight:300!important;line-height:1.4!important;box-shadow:none!important}
+#tab-ranker .question-edit-input:focus{border-color:transparent!important;outline:none!important}
