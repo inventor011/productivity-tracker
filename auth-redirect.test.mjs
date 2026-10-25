@@ -76,7 +76,7 @@ const pages = [
 ];
 
 for (const [origin, search] of pages) {
-  test('Google sign-in returns to ' + origin + (search ? ' and ignores ' + search : ''), async () => {
+  test('Google sign-in sets redirectTo to ' + origin + (search ? ' and ignores ' + search : ''), async () => {
     const call = await clickGoogle(origin, search);
     assert.equal(call.provider, 'google');
     assert.equal(call.options.redirectTo, origin);
