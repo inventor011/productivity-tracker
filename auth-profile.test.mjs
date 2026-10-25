@@ -136,16 +136,14 @@ test('a new user checks one username and inserts it when it is free', async () =
     inserts: [{ error: null }],
     rpc: { data: false, error: null },
   });
-  assert.deepEqual(result.calls.find((call) => call.rpc), {
-    rpc: 'username_taken',
-    args: { candidate: 'ada' },
-  });
+  const rpc = result.calls.find((call) => call.rpc);
+  assert.equal(rpc.rpc, 'username_taken');
+  assert.equal(rpc.args.candidate, 'ada');
   assert.equal(result.calls.some((call) => call.eq && call.eq[0] === 'username'), false);
-  assert.deepEqual(result.calls.find((call) => call.insert).insert, {
-    id: adaId,
-    display_name: 'Ada Lovelace',
-    username: 'ada',
-  });
+  const inserted = result.calls.find((call) => call.insert).insert;
+  assert.equal(inserted.id, adaId);
+  assert.equal(inserted.display_name, 'Ada Lovelace');
+  assert.equal(inserted.username, 'ada');
   result.timers.find((timer) => timer.ms === 600).fn();
   assert.equal(result.elements['welcome-modal'].style.display, 'flex');
 });
@@ -157,10 +155,9 @@ test('a taken username is saved with the same four-digit suffix', async () => {
     inserts: [{ error: null }],
     rpc: { data: true, error: null },
   });
-  assert.deepEqual(result.calls.find((call) => call.rpc), {
-    rpc: 'username_taken',
-    args: { candidate: 'ada' },
-  });
+  const rpc = result.calls.find((call) => call.rpc);
+  assert.equal(rpc.rpc, 'username_taken');
+  assert.equal(rpc.args.candidate, 'ada');
   assert.equal(result.calls.some((call) => call.eq && call.eq[0] === 'username'), false);
   assert.equal(result.calls.find((call) => call.insert).insert.username, 'ada1000');
   assert.equal(result.calls.filter((call) => call.insert).length, 1);

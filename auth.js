@@ -125,6 +125,24 @@
     var meta = user.user_metadata || {};
     var username = meta.username || nameToUsername(name);
 
+    function insertProfile(id, displayName, value) {
+      return sb.from('profiles').insert({ id: id, display_name: displayName, username: value }).then(function (res) {
+        var conflictText = res.error ? (res.error.message || '') + (res.error.details || '') : '';
+        if (res.error && res.error.code === '23505' && conflictText.indexOf('profiles_username_key') !== -1) {
+          return sb.from('profiles').insert({
+            id: id,
+            display_name: displayName,
+            username: value + Math.floor(Math.random() * 9000 + 1000)
+          }).then(function (retry) {
+            if (retry.error) throw retry.error;
+            return true;
+          });
+        }
+        if (res.error) throw res.error;
+        return true;
+      });
+    }
+
     return sb.from('profiles').select('id, display_name').eq('id', user.id).maybeSingle().then(function (res) {
       if (res.data) {
         var stored = res.data.display_name;
@@ -133,12 +151,10 @@
         }
         return false; // existing user
       }
-      // No profile row yet → brand-new signup
-      return sb.from('profiles').select('id').eq('username', username).maybeSingle().then(function (check) {
-        if (check.data) username = username + Math.floor(Math.random() * 9000 + 1000);
-        return sb.from('profiles').insert({ id: user.id, display_name: name, username: username }).then(function () {
-          return true; // new user
-        });
+      return sb.rpc('username_taken', { candidate: username }).then(function (check) {
+        if (check.error) throw check.error;
+        if (check.data === true) username = username + Math.floor(Math.random() * 9000 + 1000);
+        return insertProfile(user.id, name, username);
       });
     });
   }
