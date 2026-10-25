@@ -57,7 +57,7 @@
     try {
       var result = await sb.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: 'https://productivity101.vercel.app' }
+        options: { redirectTo: window.location.origin }
       });
       if (result.error) setError(result.error.message);
     } catch (e) {
