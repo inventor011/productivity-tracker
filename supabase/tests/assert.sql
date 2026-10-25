@@ -11,6 +11,19 @@ BEGIN
 END $$;
 
 DO $$
+DECLARE
+  config text[];
+BEGIN
+  SELECT p.proconfig INTO config
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'username_taken';
+  IF config IS NULL OR NOT (config @> ARRAY['search_path=""']) THEN
+    RAISE EXCEPTION 'username_taken search_path is %', config;
+  END IF;
+END $$;
+
+DO $$
 BEGIN
   IF has_function_privilege('anon', 'public.username_taken(text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'anon can execute username_taken';
